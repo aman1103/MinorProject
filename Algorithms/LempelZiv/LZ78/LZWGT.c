@@ -30,7 +30,7 @@
 #include <string.h>
 #include "UTYPES.H"
 #include "gtbitio.c"
-#include "lzwbt.c"
+#include "LZWBT.C"
 
 #define CODE_MAX_BITS     16
 #define CODE_MAX          (1<<(CODE_MAX_BITS))

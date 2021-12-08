@@ -23,7 +23,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include "lzlist.h"
+#include "lzlist.H"
 
 /* this is the table of listheads indexed by 256 characters. */
 int lzlist[ LZ_MAX_SYM ];

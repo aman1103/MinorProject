@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "gtbitio.h"
+#include "gtbitio.H"
 
 FILE *gIN, *pOUT;
 unsigned int pBUFSIZE = 8192, gBUFSIZE = 8192;

@@ -45,7 +45,7 @@
 #include <string.h>
 #include "utypes.h"
 #include "gtbitio.c"
-#include "lzlist.c"
+#include "lzlist.C"
 
 /* the decompressor's must also equal these values. */
 #define WIN_BUFSIZE   4096

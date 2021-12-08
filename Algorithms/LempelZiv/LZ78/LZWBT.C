@@ -10,7 +10,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include "lzwbt.h"
+#include "LZWBT.H"
 
 /* code_char[i] = character of code i */
 unsigned char  *code_char;

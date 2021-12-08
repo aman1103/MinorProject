@@ -10,8 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: build
-        run: make build
+        run: sudo make build
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - run: python generate_csv.py
+      - run: sudo python generate_csv.py
