@@ -1,0 +1,17 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: make build
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - run: python generate_csv.py
