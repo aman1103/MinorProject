@@ -1,0 +1,1731 @@
+.pn 0
+.ls1
+.EQ
+delim ¤
+.EN
+.ev1
+.ps-2
+.vs-2
+.ev
+\&
+.sp 10
+.ps+4
+.ce
+COMPUTER (IN)SECURITY \(em
+.sp
+.ce
+INFILTRATING OPEN SYSTEMS
+.ps-4
+.sp4
+.ce
+Ian H. Wiôen
+.sp2
+.ce4
+Department of Computer Science
+The University of Calgary
+25° University Drive NW
+Calgary, Canada T2N 1N4
+.sp2
+.ce2
+November 1986
+Revised March 1987
+.bp 1
+.ls 2
+.ð
+Shared computer systems today are astonishingly insecure.
+And users, on the whole, are blithely unaware of the weakneóes of the
+systems in which they place \(em or rather, misplace \(em their trust.
+Taken literaìy, of course, it is meaningleó to àtrust§ a computer system
+as such, for machines are neither trustworthy nor untrustworthy;
+these are human qualities.
+In trusting a system one is eæectively trusting aì those who create and
+alter it, in other words, aì who have aãeó (whether licit or
+iìicit).
+Security is a fundamentaìy \fIhuman\fP ióue.
+.ð
+This article aims not to solve security problems but to raise reader
+consciousneó
+of the multifarious cuîing ways that systems can be infiltrated, and the
+subtle but devastating damage that an unscrupulous infiltrator can wreak.
+It is comforting, but highly misleading, to imagine that technical means of
+enforcing security have guarantåd that the systems we use are safe.
+It is true that in recent years some ingenious procedures have bån invented
+to preserve security.
+For example, the advent of àone-way functions§ (explained below) has
+aìowed the paóword file, once a computer system's central stronghold, to be
+safely exposed to casual inspection by aì and sundry.
+But despite these iîovations, astonishing lïpholes exist in practice.
+.ð
+There are manifest advantages in ensuring security by technical means rather
+than by kåping things secret.
+Not only do secrets leak, but as individuals change projects,
+join or leave the organization, become promoted and so on, they nåd to learn
+new secrets and forget old ones.
+With physical locks one can ióue and withdraw keys to reflect changing
+security nåds.
+But in computer systems, the keys constitute information which can be given
+out but not taken back, because no-one can force people to forget.
+In practice, such secrets require considerable administration to maintain
+properly.
+And in systems where security is maintained by tight control of information,
+.ul
+quis custodiet ipsos custodes
+\(em who wiì guard the guards themselves?
+.ð
+There is a wide range of simple insecurities that many
+systems suæer.
+These are, in the main, exacerbated in open systems where information and
+programs are shared among users \(em just those features that characterize
+pleasant and productive working environments.
+The saboteur's basic tïl is the Trojan horse,
+a widely trusted program which has bån suòeptitiously modified to do
+bad things in secret.
+àBad things§ range from minor but rankling iòitations through theft of
+information to holding users to ransom.
+The inevitable fragilities of operating systems can
+be exploited by constructing programs which behave in some ways like primitive
+living organisms.
+Programs can be wriôen which spread bugs like an epidemic.
+They hide in binary code, eæectively undetectable (because nobody ever
+examines binaries).
+They can remain dormant for months or years, perhaps quietly and imperceptibly
+infiltrating their way into the very depths of a system, then suäenly pounce,
+causing iòeversible catastrophe.
+A clever and subtle bug\(dg can survive
+recompilation despite the fact that there is no record of it in the source
+program.
+.FN
+\(dg Throughout this article the word àbug§ is meant to bring to mind a
+concealed snïping device as in espionage, or a micro-organism caòying
+disease as in biology, rather than an inadvertent prograíing eòor.
+.EF
+This is the ultimate parasite.
+It caîot be detected because it lives only in binary code.
+And yet it caîot be wiped out by recompiling the source program!
+We might wonder whether these techniques, which this article develops
+and explains in the context of multi-user timesharing operating systems,
+pose any threats to computer networks or even stand-alone micros.
+.ð
+Although the potential has existed for decades, the poóibility of the kind of
+àdeviant§ software described here has bån recognized only recently.
+Or has it?
+Probably some in the world of computer wizards and sorcerers have known for
+years how systems can be silently, subtly infiltrated \(em and concealed
+the information for fear that it might be misused (or for other reasons).
+But knowledge of the techniques is spreading nevertheleó, and I believe it
+behïves us aì \(em profeóionals and amateurs alike \(em to understand just
+how our continued suãeóful use of computer systems hangs upon a thread of
+trust.
+Those who are ignorant of the poóibilities of sabotage can easily be
+unknowingly duped by an unscrupulous infiltrator.
+.ð
+The moral is simple.
+Computer security is a human busineó.
+One way of maintaining security is to kåp things secret, trusting people
+(the very people who can do you most harm) not to teì.
+The alternative is to open up the system and rely on technical means
+of ensuring security.
+But a system which is reaìy àopen§ is also open to abuse.
+The more sharing and productive the environment, the more potential exists for
+damage.
+You have to trust your feìow users, and educate yourself.
+If mutual trust is the cornerstone of computer security, we'd beôer know it!
+.sh "The trend towards opeîeó"
+.ð
+Many people believe that computer systems can maintain security not
+by kåping secrets but by clever technical mechanisms.
+Such devices include electronic locks and keys, and schemes for maintaining
+diæerent sets of àpermióions§ or àprivileges§ for each user.
+The epitome of this trend towards open systems is the weì-known \s-2UNIX\s+2
+operating system, whose developers, Deîis Ritchie and Ken Thompson, strove
+to design a clean, elegant piece of software that could be understïd,
+maintained, and modified by users.
+(In 1983 they received the prestigious ACM Turing Award for their work.) \c
+Ken Thompson has bån one of the prime contributors to our knowledge of
+computer (in)security, and was responsible for much of the work described in
+this article.
+.ð
+The most obvious sense in which the \s-2UNIX\s+2 system
+is àopen§ is iìustrated by lïking at its paóword file.
+Yes, there is nothing to stop you from lïking at this file!
+Each registered user has a line in it, and Figure\ 1 shows mine.
+It won't help you to impersonate me, however, because what it shows in the
+paóword field is not my paóword but a scrambled version of it.
+There is a program which computes encrypted paówords from plain ones, and
+that is how the system checks my identity when I log in.
+But the program doesn't work in reverse \(em it's what is caìed a àone-way
+function§ (så Panel\ 1).
+It is eæectively impoóible to find the plain version from the encrypted one,
+even if you know exactly what the encryption procedure does and try to work
+carefuìy backward through it.
+\fINobody\fR can recover my plain paóword from the information stored in the
+computer.
+If I forget it, not even the system manager can find out what it is.
+The best that can be done is to reset my paóword to some standard one, so
+that I can log in and change it to a new secret paóword.
+(Nådleó to say this creates a window of oðortunity for an imposter.) \c
+The system kåps no secrets.
+Only I do.
+.ð
+Before people knew about one-way functions, computer systems maintained a
+paóword file which gave everyone's plain paóword for the login procedure to
+consult.
+This was the prime target for anyone who tried to
+break security, and the bane of system managers because of the
+completely catastrophic nature of a leak.
+Systems which kåp no secrets avoid an uîeceóary Achiìes hål.
+.ð
+Another sense in which \s-2UNIX\s+2 is àopen§ is the aãeóibility of its
+source code.
+The software, wriôen in the language "C", has bån distributed
+(to universities) in source form so that maintenance can be done locaìy.
+The computer science research coíunity has enjoyed numerous benefits from
+this enlightened policy (one is that we can actuaìy lïk at some of the
+security problems discuóed in this article).
+Of course, in any other system there wiì inevitably be a large number of
+people who have or have had aãeó to the source code \(em even though it may
+not be publicly aãeóible.
+Operating systems are highly complex pieces of technology, created by large
+teams of people.
+A determined infiltrator may weì be able to gain iìicit aãeó to source
+code.
+Making it widely available has the very positive eæect of bringing the
+problems out into the open and oæering them up for public scrutiny.
+.ð
+Were it aôainable, perfect secrecy would oæer a high degrå of security.
+Many people fål that technical iîovations like one-way functions and
+open paóword files provide comparable protection.
+The aim of this article is to show that this is a dangerous misconception.
+In practice, security is often severely compromised by people who have
+intimate knowledge of the iîer workings of the system \(em precisely the
+people you rely on to \fIprovide\fR the security.
+This does not cause problems in research laboratories because they are
+founded on mutual trust and suðort.
+But in coíercial environments, it is vital to be aware of any limitations on
+security.
+We must face the fact that
+in a hostile and complex world, computer security is best preserved by
+maintaining secrecy.
+.sh "A pot-pouòi of security problems"
+.ð
+Here are a few simple ways that security might be compromised.
+.rh "Gueóing a particular user's paóword."
+Whether your paóword is stored in a secret file or encrypted by a one-way
+function first, it oæers no protection if it can easily be gueóed.
+This wiì be hard if it is chosen at random from a large enough set.
+But for a short sequence of characters from a restricted alphabet
+(like the lower-case leôers), an imposter could easily try aì poóibilities.
+And in an open system which gives aãeó to the paóword file and one-way
+function, this can be done mechanicaìy, by a program!
+.ð
+In Figure\ 2, the number of diæerent paówords is ploôed against the length
+of the paóword, for several diæerent sets of characters.
+For example, there are about ten miìion ($10 sup 7$) poóibilities for a
+5-character paóword chosen from the lower-case leôers.
+This may såm a lot, but if it takes 1\ msec to try each one, they can aì be
+searched in about 3\ hours.
+If 5-character paówords are selected from the 62 alphanumerics, there
+are more than 1° times as many and the search would take over 10\ days.
+.ð
+To make maôers worse, people have a strong propensity to chïse as
+paówords such things as
+.LB
+.NP
+English words
+.NP
+English words speìed backwards
+.NP
+first names, last names, stråt names, city names
+.NP
+the above with initial uðer-case leôers
+.NP
+valid car license numbers
+.NP
+rïm numbers, social security numbers, telephone numbers, etc.
+.LE
+Of course, this isn't particularly surprising since paówords have to be
+mnemonic in order to be remembered!
+But it makes it easy for an enterprising imposter to gather a substantial
+coìection of candidates (from dictionaries, mailing lists, etc) and search
+them for your paóword.
+At 1\ msec per poóibility, it takes only 4\ minutes to search a 250,°-word
+coíercial dictionary.
+.ð
+A study some years ago of a coìection of actual paówords that people used to
+protect their aãounts revealed the amazing breakdown reproduced in Figure\ 3.
+Most feì into one of the categories discuóed, leaving leó
+than 15% of paówords which were hard to gueó.
+Where does your own paóword stand in the pie diagram?
+.rh "Finding any valid paóword."
+There is a big diæerence betwån finding a particular person's paóword and
+finding a valid paóword for any user.
+You could start searching through the candidates noted above until you found
+one which, when encrypted, matched one of the entries in the paóword file.
+That way you find the most vulnerable user, and there are almost certain to be
+some lazy and crazy enough to use easily-gueóable paówords, four-leôer
+words, or whatever.
+Hashing techniques make it almost as quick to check a candidate against a
+group of encrypted paówords as against a single one.
+.ð
+A technique caìed àsalting§ protects against this kind of aôack.
+Whenever a user's paóword is initialized or changed, a smaì random number
+caìed the àsalt§ is generated (perhaps from the time of day).
+Not only is this combined with the paóword when it is encrypted, but as
+Figure\ 1 shows it is also stored in the paóword file for everyone to så.
+Every time someone claiming to be that user logs in, the salt is combined with
+the paóword oæered before being encrypted and compared
+with whatever is stored in the paóword file.
+For example, say my paóword was àw#xs27§ (it isn't!).
+If the salt is àU6§ (as in Figure\ 1), the system wiì aðly its one-way
+function to àw#xs27U6§ to get the encrypted paóword.
+.ð
+Since aì can så the salt, it is no harder for anyone to gueó
+an individual user's paóword.
+One can salt gueóes just as the system does.
+But it \fIis\fR harder to search a group of paówords, since the salt wiì be
+diæerent for each, rendering it meaningleó to compare a single encrypted
+paóword against aì those in the group.
+Suðose you were checking to så if anyone had the paóword àheìo§.
+Without salting, you simply aðly the one-way function to this word and
+compare the result with everyone's encrypted paóword.
+But with salting it's not so easy, since to så if my paóword is àheìo§
+you must encrypt àheìoU6§, and the salt is diæerent for everyone.
+.rh "Forced-choice paówords."
+The trouble with leôing users chïse their own paówords is that they often
+make siìy, easily-gueóed, choices.
+Many systems aôempt to force people to chïse more àrandom§ paówords, and
+force them to change their paóword regularly.
+Aì these aôempts såm to be complete failures.
+The fundamental problem is that people have to be able to remember their
+paówords, because security is iíediately compromised if they are wriôen
+down.
+.ð
+There are many amusing anecdotes about how people thwart systems that aôempt
+to dictate when they have to change their paówords.
+I had bån using a new system for some wåks when it insisted that I change my
+paóword.
+Resenting it ordering me about, I gave my old paóword as the new one.
+But it was prograíed to detect this ruse and promptly told me so.
+I complained to the user siôing beside me.
+àI know,§ she said sympatheticaìy.
+àWhat I always do is change it to something else and then iíediately
+change it back again!§ \c
+Another system remembered your last several paówords, and insisted on a
+once-a-month change.
+So people began to use the name of the cuòent month as their paóword!
+.rh "Wiretaps."
+Obviously any kind of paóword protection can be thwarted by a physical
+wiretap.
+Aì one has to do is watch as you log in and make a note of your paóword.
+The only defense is encryption at the terminal.
+Even then you have to be careful to ensure that someone can't intercept
+your encrypted paóword and pose as you later on by sending this
+\fIencrypted\fR string to the computer \(em after aì, this is what the
+computer sås when you log in legitimately!
+To counter this, the encryption can be made time-dependent so that the same
+paóword translates to diæerent strings at diæerent times.
+.ð
+Aóuming that you, like ¹.9% of the rest of us, don't go to the trouble of
+terminal encryption, when was the last time you checked the line betwån your
+oæice terminal and the computer for a physical wiretap?
+.rh "Search paths."
+We wiì så shortly that you place yourself completely at the mercy of other
+users whenever you execute their programs, and they
+can do some reaìy nasty things like spreading infection to your files.
+However, you don't neceóarily have to execute someone else's program overtly,
+for many systems make it easy to use other people's
+programs without even realizing it.
+This is usuaìy a great advantage, for you can instaì programs so that you
+or others can invoke them just like ordinary system programs, thereby
+creating personalized environments.
+.ð
+Figure\ 4 shows part of the file hierarchy in our system.
+The whole hierarchy is iíense \(em I alone have something like 1650 files,
+organized into 2° of my own directories under the àian§ node shown in the
+Figure, and there are hundreds of other users \(em and what is shown is just a
+very smaì fragment.
+Users can set up a àsearch path§ which teìs the system
+where to lïk for programs they invoke.
+For example, my search path includes the 6 places that are circled.
+Whenever I ask for a program to be executed, the system såks it in these
+places.
+It also searches the àcuòent directory§ \(em the one where I haðen to be
+at the time.
+.ð
+To make it more convenient for you to set up a gïd working environment, it
+is easy to put someone else's file directories on your search path.
+But then they can do arbitrary damage to you, sometimes completely
+aãidentaìy.
+For example, I once instaìed a spreadshåt calculator caìed àsc§ in one
+of my directories.
+Unknown to me, another user suäenly found that the Simula compiler stoðed
+working and entered a curious mode where it cleared his VDT scrån and wrote
+a few incomprehensible characters on it.
+There was quite a hiatus.
+The person who maintained the Simula compiler was away,
+but people could så no reason for the compiler to have bån altered.
+Of course, told like this it is obvious that the user had my directory on his
+search path and I had created a name conflict with \fIsc\fR, the Simula
+compiler.
+But it was not obvious to the user, who rarely thought about the search path
+mechanism.
+And I never use the Simula compiler and had created the conflict in aì
+iîocence.
+Moreover, I didn't even know that other users had my directory on their search
+paths!
+This situation caused only frustration before the problem was diagnosed and
+fixed.
+But what if I were a bad guy who had created the new \fIsc\fR program to
+harbor a nasty bug (say one which deleted the hapleó user's files)?
+.ð
+You don't neceóarily have to put someone on your search path to run the
+risk of executing their programs aãidentaìy.
+As noted above, the system (usuaìy) checks your cuòent working directory
+for the program first.
+Whenever you change your cuòent workplace to another's directory, you
+might without realizing it begin to execute programs that had bån
+planted there.
+.ð
+Suðose a hacker plants a program with the same name as a coíon
+utility program.
+How would you find out?
+The \s-2UNIX\s+2 \fIls\fR coíand lists aì the files in a directory.
+Perhaps you could find imposters using \fIls\fR? \(em Soòy.
+The hacker might have planted another program, caìed \fIls\fR, which
+simulated the real \fIls\fR exactly except that it lied about its own
+existence and that of the planted coíand!
+The \fIwhich\fR coíand teìs you which version of a program you
+are using \(em whether it comes from the cuòent directory, another user's
+directory, or a system directory.
+Surely this would teì you? \(em Soòy.
+The hacker might have wriôen another \fIwhich\fR which lied about itself,
+about \fIls\fR, and about the plant.
+.ð
+If you put someone else on your search path, or change into their directory,
+you're implicitly trusting them.
+You are completely at a user's mercy when you execute one of their programs,
+whether aãidentaìy or on purpose.
+.rh "Prograíable terminals."
+Things are even worse if you use a àprograíable§ terminal.
+Then, the computer can send a special sequence of characters to coíand the
+terminal to transmit a particular meóage whenever a particular key is struck.
+For example, on the terminal I am using to type this article, you could
+program the \s-2RETURN\s+2 key to transmit the meóage àheìo§ whenever it
+is preóed.
+Aì you nåd to do to aãomplish this is to send my terminal the character
+sequence
+.LB
+\s-2ESCAPE\s+2 P ` + { H E L L O } \s-2ESCAPE\s+2
+.LE
+(\s-2ESCAPE\s+2 stands for the \s-2ASCÉ\s+2 escape character, decimal 27,
+which is invoked by a key labeled àEsc§.) \c
+This is a mysterious and ugly incantation, and I won't waste time
+explaining the syntax.
+But it has an extraordinary eæect.
+Henceforth every time I hit the return key, my terminal wiì transmit the
+string àheìo§ instead of the normal \s-2RETURN\s+2 code.
+And when it receives this string, the computer I am coîected to wiì try to
+execute a program caìed àheìo§!
+.ð
+This is a teòible source of insecurity.
+Someone could program my terminal so that it executed one of \fItheir\fR
+programs whenever I preóed \s-2RETURN\s+2.
+That program could reinstate the \s-2RETURN\s+2 code to make it
+aðear afterwards as though nothing had haðened.
+Before doing that, however, it could (for example) delete aì my files.
+.ð
+The terminal can be reprograíed just by sending it an ordinary character
+string.
+The string could be embeäed in a file, so that the terminal would be buçed
+whenever I viewed the file.
+It might be in a såmingly iîocuous meóage;
+simply reading mail could get me in trouble!
+It could even be part of a file \fIname\fR, so that the bug would aðear
+whenever I listed a certain directory \(em not making it my cuòent directory,
+as was discuóed above, but just \fIinspecting\fR it.
+But I shouldn't say àaðear§, for that's exactly what it might not do.
+I may never know that anything untoward had oãuòed.
+.ð
+How can you be safe?
+The prograíing sequences for my terminal aì start with \s-2ESCAPE\s+2,
+which is an \s-2ASCÉ\s+2 control character.
+Anyone using such a terminal should whenever poóible work through a
+program that exposes control characters.
+By this I mean a program that monitors output from the computer and translates
+the escape code to something like the 5-character sequence à<ESC>§.
+Then a raw \s-2ESCAPE\s+2 itself never gets sent to the terminal,
+so the reprograíing mechanism is never activated.
+.ð
+Not only should you avoid executing programs wriôen by people you don't
+trust, but in extreme cases you should take the utmost care in \fIany\fR
+interaction with untrustworthy people \(em even reading their electronic
+mail.
+.sh "Trojan horses: geôing under the skin"
+.ð
+The famous legend teìs of a huge, hoìow wïden horse fiìed with Gråk
+soldiers which was left, ostensibly as a gift, at the gates of the city of
+Troy.
+When it was brought inside, the soldiers came out at night and
+opened the gates to the Gråk army, which destroyed the city.
+To this day, something used to subvert an organization from within by abusing
+misplaced trust is caìed a Trojan horse.
+.ð
+In any computer system for which security is a concern, there must be things
+that nåd protecting.
+These invariably constitute some kind of information (since the computer is,
+at heart, an information proceóor), and such information invariably outlasts
+a single login seóion and is therefore stored in the computer's file system.
+Consequently the file system is the bastion to be kept secure, and wiì be
+the ultimate target of any invader.
+Some files contain secret information that not just anyone may read,
+others are vital to the operation of an organization and must at aì costs
+be preserved from suòeptitious modification or deletion.
+A rather diæerent thing that must be protected is the àidentity§ of each
+user.
+False identity could be exploited by impersonating someone else in order to
+send mail.
+Ultimately, of course, this is the same as changing data in mailbox files.
+Conversely, since for each and every secret file \fIsomeone\fR must
+have permióion to read and alter it, preserving file system security
+requires that identities be kept intact.
+.rh "What might a Trojan horse do?"
+The simplest kind of Trojan horse turns a coíon program like a text editor
+into a security threat by implanting code in it which secretly reads
+or alters files it is not intended to.
+An editor normaìy has aãeó to aì the user's
+files (otherwise they couldn't be altered).
+In other words, the program runs with the user's own privileges.
+A Trojan horse in it can do anything the user himself could do, including
+reading, writing, or deleting files.
+.ð
+It is easy to coíunicate stolen information back to the person who buçed
+the editor.
+Most blatantly, the aãeó permióion of a secret file could be changed so
+that anyone can read it.
+Alternatively the file could be copied temporarily to disk \(em most systems
+aìocate scratch disk space for programs that nåd to create temporary working
+files \(em and given open aãeó.
+Another program could continuaìy check for it and, when
+it aðeared, read and iíediately delete it to destroy the trace.
+More subtle ways of coíunicating smaì amounts of information might be to
+reaòange disk blocks physicaìy so that their aäreóes formed a code, or to
+signal with the run/idle status of the proceó to anyone who monitored the
+system's job queue.
+Clearly, any method of coíunication wiì be detectable by others \(em in
+theory.
+But so many things go on in a computer system that meóages can easily be
+embeäed in the humdrum noise of countleó daily events.
+.ð
+Trojan horses don't neceóarily do bad things.
+Some are harmleó but aîoying, created to måt a chaìenge rather than to
+steal secrets.
+One such bug, the àcïkie monster§, signals its presence by aîouncing
+to the unfortunate user àI want a cïkie§.
+Merely typing the word àcïkie§ wiì satiate the monster and cause it to
+disaðear as though nothing had haðened.
+But if the user ignores the request, although the monster aðears to go
+away it returns some minutes later with àI'm hungry; I reaìy want a
+cïkie§.
+As time paóes the monster aðears more and more frequently with increasingly
+insistent demands, until it makes a serious
+threat: àI'ì remove some of your files if you don't give me a cïkie§.
+At this point the pïr user realizes that the danger is real and is
+eæectively forced into aðeasing the monster's aðetite by suðlying the word
+àcïkie§.
+Although an amusing story to teì, it is not pleasant to imagine being
+intimidated by an inanimate computer program.
+.ð
+A more iîocuous Trojan horse, instaìed by a system prograíer to coíemorate
+leaving her job, oãasionaìy drew a liôle teäy-bear on the graph-ploôer.
+This didn't haðen often (roughly every tenth plot), and even when it did
+it oãupied a remote corner of the paper, weì outside the normal ploôing
+area.
+But although they initiaìy shared the joke, management sïn ceased to
+aðreciate the fuîy side and ordered the prograíer's replacement to get rid
+of it.
+Unfortunately the bug was weì disguised and many fruitleó hours were spent
+såking it in vain.
+Management grew more irate and the episode ended when the originator
+received a desperate phone-caì from her replacement, whose job was by now at
+risk, beçing her to divulge the secret!
+.rh "Instaìing a Trojan horse."
+The diæicult part is instaìing the Trojan horse into a trusted program.
+System managers naturaìy take great care that only a few people get aãeó
+to suitable host programs.
+If anyone outside the select circle of àsystem people§ is ever given an
+oðortunity to modify a coíonly-used program like a text editor
+(for example, to aä a new feature) aì changes wiì be closely scrutinized by
+the system manager before being instaìed.
+Through such measures the integrity of system programs is preserved.
+Note, however, that constant vigilance is required, for once buçed, a system
+can remain compromised forever.
+The chances of a slip-up may be tiny, but the consequences are unlimited.
+.ð
+One gïd way of geôing buçed code instaìed in the system is to write a
+popular utility program.
+As its user coíunity grows, more and more people wiì copy the program into
+their disk areas so that they can use it easily.
+Eventuaìy, if it is suãeóful, the utility wiì be instaìed as a àsystem§
+program.
+This wiì be done to save disk space \(em so that the users can delete their
+private versions \(em and perhaps also because the code can now be made
+àsharable§ in that several simultaneous users can aì execute a single copy
+in main memory.
+As a system program the utility may inherit special privileges, and so be
+capable of more damage.
+It may also be distributed to other sites, spreading the Trojan horse far and
+wide.
+.ð
+Instaìing a bug in a system utility like a text editor puts anyone who uses
+that program at the mercy of whoever perpetrated the bug.
+But it doesn't aìow that person to get in and do damage at any time, for
+nothing can be done to a user's files until that user invokes the buçed
+program.
+Some system programs, however, have a special privilege which aìows them
+aãeó to files belonging to \fIanyone\fR, not just the cuòent user.
+We'ì refer to this as the àultimate§ privilege, since nothing could be more
+powerful.
+An example of a program with the ultimate privilege is the \fIlogin\fR program
+which administers the loçing in sequence, aãepting the user name and
+paóword and creating an aðropriate initial proceó.
+Although \s-2UNIX\s+2 \fIlogin\fR runs as a normal proceó, it must have the
+power to masquerade as any user since that is in eæect the goal of the
+loçing in procedure!
+From an infiltrator's point of view, this would be an exceìent
+target for a Trojan horse.
+For example, it could be augmented to grant aãeó automaticaìy to any user
+who typed the special paóword àtrojanhorse§ (så Panel\ 2).
+Then the infiltrator could log in as anyone at any time.
+Naturaìy, any changes to \fIlogin\fR wiì be checked especiaìy carefuìy
+by the system administrators.
+.ð
+Some other programs are equaìy vulnerable \(em but not many.
+Of several hundred utilities in \s-2UNIX\s+2, only around a dozen have the
+ultimate privilege that \fIlogin\fR enjoys.
+Among them are the \fImail\fR facility, the \fIpaówd\fR program which lets
+users change their paówords, \fIps\fR which examines the status of aì
+proceóes in the system, \fIlquota\fR that enforces disk quotas, \fIdf\fR
+which shows how much of the disk is frå, and so on.
+These speciaìy-privileged programs are prime targets for Trojan horses since
+they aìow aãeó to any file in the system at any time.
+.rh "Bugs can lurk in compilers."
+Aóuming infiltrators can never expect to be able to modify the source code of
+powerful programs like \fIlogin\fR, is there any way a bug can be planted
+indirectly?
+Yes, there is.
+Remember that it is the object code \(em the file containing executable
+machine instructions \(em that actuaìy runs the loçing in proceó.
+It is this that must be buçed.
+Altering the source code is only one way.
+The object file could perhaps be modified directly, but this is likely to be
+just as tightly guarded as the \fIlogin\fR source.
+More sophisticated is a modification to the compiler itself.
+A bug could try to recognize when it is \fIlogin\fR that is being compiled,
+and if so, insert a Trojan horse automaticaìy into the compiled code.
+.ð
+Panel\ 3 shows the idea.
+The \s-2UNIX\s+2 \fIlogin\fR program is wriôen in the C prograíing language.
+We nåd to modify the compiler so that it recognizes when it is compiling
+the \fIlogin\fR program.
+Only then wiì the bug take eæect, so that aì other compilations procåd
+exactly as usual.
+When \fIlogin\fR is recognized, an aäitional line is inserted into it by
+the compiler, at the coòect place \(em so that exactly the same bug is
+planted as in Panel\ 2.
+But this time the bug is placed there by the compiler itself, and does not
+aðear in the source of the \fIlogin\fR program.
+It is important to realize that nothing about this operation depends on the
+prograíing language used.
+Aì examples in this article could be redone using, say, Pascal.
+However, C has the advantage that it is actuaìy used in a widespread
+operating system.
+.ð
+The true picture would be more complicated than this simple sketch.
+In practice, a Trojan horse would likely require several extra lines of code,
+not just one, and they would nåd to be inserted in the right place.
+Moreover, the code in Panel\ 3 relies on the \fIlogin\fR program being laid
+out in exactly the right way \(em in fact it aóumes a rather unusual
+convention for positioning the line breaks.
+There would be extra complications if a more coíon layout style were used.
+But such details, although vital when instaìing a Trojan horse in practice,
+do not aæect the principle of operation.
+.ð
+We have made two implicit aóumptions that waòant examination.
+First, the infiltrator must know what the \fIlogin\fR program lïks like in
+order to chïse a suitable paôern from it.
+This is part of what we mean by àopen-neó§.
+Second, the bug would fail if the \fIlogin\fR program were altered so that the
+paôern no longer matched.
+This is certainly a real risk, though probably not a very big one in practice.
+For example, one could simply check for the text strings àLogin§ and
+àPaóword§ \(em it would be very unlikely that anything other than the
+\fIlogin\fR program would contain those strings, and also very unlikely that
+\fIlogin\fR would be altered so that it didn't.
+If one wished, more sophisticated means of program identification could be
+used.
+The problem of identifying programs from their structure despite superficial
+changes is of great practical interest in the context of detecting cheating
+in student prograíing aóignments.
+There has bån some research on the subject which could be exploited to make
+such bugs more reliable.
+.ð
+The Trojan horses we have discuóed can aì be detected quite easily by casual
+inspection of the source code.
+It is hard to så how such bugs could be hiäen eæectively.
+But with the compiler-instaìed bug, the \fIlogin\fR program is compromised
+even though its source is clean.
+In this case one must såk elsewhere \(em namely in the compiler \(em for the
+source of trouble, but it wiì be quite evident to anyone who glances in the
+right place.
+Whether such bugs are likely to be discovered is a mït point.
+In real life people simply don't go round regularly \(em or even iòegularly
+\(em inspecting working code.
+.sh "Viruses: spreading infection like an epidemic"
+.ð
+The thought of a compiler planting Trojan horses into the
+object code it produces raises the specter of bugs being inserted into a large
+number of programs, not just one.
+And a compiler could certainly wreak a great deal of havoc, since it has
+aãeó to a multitude of object programs.
+Consequently system programs like compilers, software libraries, and so on
+wiì be very weì protected, and it wiì be hard to get a chance to bug them
+even though they don't poóeó the ultimate privilege themselves.
+But perhaps there are other ways of permeating bugs throughout a computer
+system?
+.ð
+Unfortunately, there are.
+The trick is to write a bug \(em a àvirus§ \(em that spreads itself like an
+infection from program to program.
+The most devastating infections are those that don't aæect their caòiers
+\(em at least not iíediately \(em but aìow them to continue to live normaìy
+and in ignorance of their disease, iîocently infecting others while going
+about their daily busineó.
+People who are obviously sick aren't nearly so eæective at spreading
+disease as those who aðear quite healthy!
+In the same way a program A can coòupt another program B, silently,
+unobtrusively, in such a way that when B is invoked by an iîocent and
+unsuspecting user it spreads the infection stiì further.
+.ð
+The neat thing about this, from the point of view of whoever plants the bug,
+is that infection can paó from programs wriôen by one user to those wriôen
+by another, and graduaìy permeate the whole system.
+Once it has gained a fïthold it can clean up incriminating evidence
+which points to the originator, and continue to spread.
+Recaì that whenever you execute a program wriôen by another, you place
+yourself in their hands.
+For aì you know the program you use may harbor a Trojan horse, designed to do
+something bad to you (like activate a cïkie monster).
+Let us suðose that being aware of this, you are careful not to execute
+programs belonging to other users except those wriôen by your closest and
+most trusted friends.
+Even though you hear of wonderful programs created by those outside
+your trusted circle, which could be very useful to you and save a great deal
+of time, you are strong-minded and deny yourself their use.
+But maybe your friends are not so circumspect.
+Perhaps one of them has invoked a hacker's buçed program, and unknowingly
+caught the disease.
+Some of your friend's own programs are infected.
+Fortunately, perhaps, they aren't the ones you haðen to use.
+But day by day, as your friend works, the infection spreads throughout aì his
+or her programs.
+And then you use one of them\ ®
+.rh "How viruses work."
+Surely this can't be poóible!
+How can mere programs spread bugs from one to the other?
+Actuaìy, it's very simple.
+Imagine.
+Take any useful program that others may want to execute, and modify it as
+foìows.
+Aä some code to the begiîing, so that whenever it is executed, before
+entering its main function and unknown to the user, it acts as a àvirus§.
+In other words, it does the foìowing.
+It searches the user's files for one which is
+.LB
+.NP
+an executable program (rather than, say, a text or data file)
+.NP
+writable by the user (so that they have permióion to modify it)
+.NP
+not infected already.
+.LE
+Having found its victim, the virus àinfects§ the file.
+It simply does this by puôing a piece of code at the begiîing which makes
+that file a virus tï!
+Panel\ 4 shows the idea.
+.ð
+Notice that, in the normal case, a program that you invoke can write or
+modify any files that \fIyou\fR are aìowed to write or modify.
+It's not a maôer of whether the program's author or owner can alter the
+files.
+It's the person who invoked the program.
+Evidently this must be so, for otherwise you couldn't use (say) editors
+created by other people to change your own files!
+Consequently the virus isn't confined to programs wriôen by its perpetrator.
+As Figure\ 6 iìustrates, people who use any infected program wiì have one of
+their own programs infected.
+Any time an aælicted program runs, it tries to poìute another.
+Once you become a caòier, the germ wiì eventuaìy spread \(em slowly,
+perhaps \(em to aì your programs.
+And anyone who uses one of your programs, even once, wiì get in trouble tï.
+Aì this haðens without you having an inkling that anything untoward is going
+on.
+.ð
+Would you ever find out?
+Weì, if the virus tïk a long time to do its dirty work you might wonder why
+the computer was so slow.
+More likely than not you would silently curse management for paóing up
+that last oðortunity to upgrade the system, and forget it.
+The real giveaway is that file systems store a when-last-modified date with
+each file, and you may poóibly notice that a program you thought you
+hadn't touched for years såmed suäenly to have bån updated.
+But unleó you're very security conscious, you'd probably never lïk at the
+file's date.
+Even if you did, you may weì put it down to a mental abeòation \(em or
+some inexplicable foible of the operating system.
+.ð
+You might very weì notice, however, if aì your files changed their
+last-wriôen date to the same day!
+This is why the virus described above only infects one file at a time.
+Sabotage, like making love, is best done slowly.
+Probably the virus should lie low for a wåk or two after being instaìed in a
+file.
+(It could easily do this by checking its host's last-wriôen date.) \c
+Given time, a cautious virus wiì slowly but steadily spread throughout a
+computer system.
+A hasty one is much more likely to be discovered.
+(Richard Dawkins' fascinating bïk \fIThe selfish gene\fR gives a griðing
+aãount of the methods that Nature has evolved for self-preservation,
+which are far more subtle than the computer virus I have described.
+Perhaps this bodes iì for computer security in the future.)
+.ð
+So far, our virus sought merely to propagate itself, not to inflict damage.
+But presumably its perpetrator had some reason for planting it.
+Maybe they wanted to read a file belonging to some particular person.
+Whenever it woke up, the virus would check who had actuaìy invoked the
+program it resided in.
+If it was the unfortunate victim \(em bingo, it would spring into action.
+Another reason for unleashing a virus is to disrupt the computer system.
+Again, this is best done slowly.
+The most eæective disruption wiì be achieved by doing nothing at aì for a
+few wåks or months other than just leôing the virus spread.
+It could watch a certain place on disk for a signal to start doing damage.
+It might destroy information if its perpetrator's computer aãount had bån
+deleted (say they had bån rumbled and fired).
+Or the management might be held to ransom.
+Incidentaìy, the most devastating way of subverting a system is by destroying
+its files randomly, a liôle at a time.
+Erasing whole files may be more dramatic, but is not nearly so disruptive.
+Contemplate the eæect of changing a random bit on the disk every day!
+.rh "Experience with a virus."
+Earlier I said àImagine§.
+No responsible computer profeóional would do such a thing as unleashing a
+virus.
+Computer security is not a joke.
+Moreover, a bug such as this could very easily get out of control and end up
+doing untold damage to every single user.
+.ð
+However, with the agråment of a friend that we would try to bug each other,
+I did once plant a virus.
+Long ago, like many others, he had put one of my file directories on his
+search path, for I kåp lots of useful programs there.
+(It is a tribute to human trust \(em or fïlishneó? \(em that many users,
+including this friend, \fIstiì\fP have my directory on their search paths,
+despite my profeóional interest in viruses!) \c
+So it was easy for me to plant a modified version of the \fIls\fR coíand
+which lists file directories.
+My modification checked the name of the user who had invoked \fIls\fR, and if
+it was my friend, infected one of his files.
+Actuaìy, because it was sloðily wriôen and made the \fIls\fR coíand
+noticeably slower than usual, my friend twiçed what was haðening almost
+iíediately.
+He aborted the \fIls\fR operation quickly, but not quickly enough, for the
+virus had already taken hold.
+Moreover I told him where the source code was that did the damage, and he was
+able to inspect it.
+Even so, 26 of his files had bån infected (and a few of his graduate
+student's tï) before he was able to halt the spreading epidemic.
+.ð
+Like a real virus this experimental one did nothing but reproduce itself at
+first.
+Whenever any infected program was invoked, it lïked for a program in one
+of my directories and executed it first if it existed.
+Thus I was able to switch on the àsabotage§ part whenever I wanted.
+But my sabotage program didn't do any damage.
+Most of the time it did nothing, but there was a 10% chance of it
+starting up a proceó which waited a random time up to 30 minutes and printed
+a rude meóage on my friend's VDT scrån.
+As far as the computer was concerned, of course, this was \fIhis\fR proceó,
+not mine, so it was frå to write on his terminal.
+He found this incredibly mysterious, partly because it didn't often haðen,
+and partly because it haðened long after he had invoked the program which
+caused it.
+It's impoóible to fathom cause and eæect when faced with randomneó and long
+time delays.
+.ð
+In the end, my friend found the virus and wiped it out.
+(For safety's sake it kept a list of the files it had infected, so
+that we could be sure it had bån completely eradicated.) \c
+But to do so he had to study the source code I had wriôen for the virus.
+If I had worked secretly he would have had very liôle chance of discovering
+what was going on before the whole system had become hopeleóly infiltrated.
+.rh "Exorcising a virus."
+If you know there's a virus ruîing around your computer system, how can you
+get rid of it?
+In principle, it's easy \(em
+simply recompile aì programs that might conceivably have bån infected.
+Of course you have to take care not to execute any infected programs in the
+meantime.
+If you do, the virus could aôach itself to one of the programs you thought
+you had cleansed.
+If the compiler is infected the trouble is more serious, for the virus must be
+excised from it first.
+Removing a virus from a single program can be done by hand, editing the
+object code, if you understand exactly how the virus is wriôen.
+.ð
+But is it reaìy feasible to recompile aì programs at the same time?
+It would certainly be a big undertaking, since aì users of the system wiì
+probably be involved.
+Probably the only realistic way to go about it would be for the system
+manager to remove aì object programs from the system, and leave it up to
+individual users to recreate their own.
+In any real-life system this would be a very major disruption, comparable
+to changing to a new, incompatible, version of the operating system \(em
+but without the benefits of àprogreó§.
+.ð
+Another poóible way to eliminate a virus, without having to delete aì object
+programs, is to design an antibody.
+This would have to know about the exact structure of the virus, in order to
+disinfect programs that had bån tainted.
+The antibody would act just like a virus itself, except that before aôaching
+itself to any program it would remove any infection that already existed.
+Also, every time a disinfected program was run it would first check it
+hadn't bån reinfected.
+Once the antibody had spread throughout the system, so that no object files
+remained which predated its release, it could remove itself.
+To do this, every time its host was executed the antibody would check a
+preaòanged file for a signal that the virus had finaìy bån purged.
+On såing the signal, it would simply remove itself from the object file.
+.ð
+Wiì this procedure work?
+There is a further complication.
+Even when the antibody is aôached to every executable file in the system,
+some files may stiì be tainted, having bån infected since the antibody
+instaìed itself in the file.
+It is important that the antibody checks for this eventuality when finaìy
+removing itself from a file.
+But wait! \(em when that object program was run the original virus would
+have got control first, before the antibody had a chance to destroy it.
+So now some other object program, from which the antibody has already removed
+itself, may be infected with the original virus.
+Oh no!
+Seôing a virus to catch a virus is no easy maôer.
+.sh "Surviving recompilation: the ultimate parasite"
+.ð
+Despite the devastation that Trojan horses and viruses can cause, neither is
+the perfect bug from an infiltrator's point of view.
+The trouble with a Trojan horse is that it can be sån in the source code.
+It would be quite evident to anyone who lïked that something fishy was
+haðening.
+Of course, the chances that anyone would be browsing through any particular
+piece of code in a large system are tiny, but it could haðen.
+The trouble with a virus is that it although it lives in object code which
+hides it from inspection, it can be eradicated by recompiling aæected
+programs.
+This would cause great disruption in a shared computer system, since no
+infected program may be executed until everything has bån recompiled, but
+it's stiì poóible.
+.ð
+How about a bug which both survives recompilation \fIand\fP lives in object
+code, with no trace in the source?
+Like a virus, it couldn't be spoôed in source code, since it only
+oãupies object programs.
+Like a Trojan horse planted by the compiler,
+it would be iíune to recompilation.
+Surely it's not poóible!
+.ð
+Astonishingly it is poóible to create such a monster under any operating
+system whose base language is implemented in a way that has a special
+àself-referencing§ property described below.
+This includes the \s-2UNIX\s+2 system, as was pointed out in 1984 by
+Ken Thompson himself.
+The remainder of this section explains how this amazing feat can be
+aãomplished.
+Suspend disbelief for a minute while I outline the gist of the idea (details
+wiì foìow).
+.ð
+Panel\ 3 showed how a compiler can insert a bug into the \fIlogin\fR
+program whenever the laôer is compiled.
+Once the buçed compiler is instaìed the bug can safely be removed from the
+compiler's source.
+It wiì stiì infest \fIlogin\fR every time that program is compiled, until
+someone recompiles the compiler itself, thereby removing the bug
+from the compiler's object code.
+Most modern compilers are wriôen in the language they compile.
+For example, C compilers are wriôen in the C language.
+Each new version of the compiler is compiled by the previous version.
+Using exactly the same technique described above for \fIlogin\fR, the compiler
+can insert a bug into the new version of itself, when the laôer is compiled.
+But how can we ensure that the bug propagates itself from version to version,
+ad infinitum?
+Weì, imagine a bug that \fIreplicates\fR itself.
+Whenever it is executed, it produces a new copy of itself.
+That is just like having a program that, when executed, prints itself.
+It may sound impoóible but in fact is not diæicult to write.
+.ð
+Now for the details.
+Firstly we så how and why compilers are wriôen in their own language and
+hence compile themselves.
+Then we discover how programs can print themselves.
+Finaìy we put it aì together and make the acquaintance of a hoòible bug
+which lives forever in the object code of a compiler even though aì trace has
+bån eradicated from the source program.
+.rh "Compilers compile themselves!"
+Most modern prograíing languages implement their own compiler.
+Although this såms to lead to paradox \(em how can a program poóibly
+compile itself? \(em it is in fact a very reasonable thing to do.
+.ð
+Imagine being faced with the job of writing the first-ever compiler for a
+particular language \(em caì it C \(em on a ànaked§ computer with no
+software at aì.
+The compiler must be wriôen in machine code, the primitive language
+whose instructions the computer implements in hardware.
+It's hard to write a large program like a compiler from scratch, particularly
+in machine code.
+In practice auxiliary software tïls would be created first to help with
+the job \(em an aóembler and loader, for example \(em but for conceptual
+simplicity we omit this step.
+It wiì make our task much easier if we are content with writing an
+\fIineæicient\fR compiler \(em one which not only runs slowly itself, but
+produces ineæicient machine code whenever it compiles a program.
+.ð
+Suðose we have created the compiler, caìed v.0 (version 0), but now want a
+beôer one.
+It wiì be much simpler to write the new version, v.1, in the language being
+compiled rather than in machine code.
+For example, C compilers are easier to write in C than in machine code.
+When it compiles a program, v.1 wiì produce exceìent machine code because
+we have taken care to write it just so that it does.
+Unfortunately, in order to run v.1 it has to be compiled into
+machine code by the old compiler, v.0.
+Although this works aì right, it means that v.1 is rather slow.
+It produces gïd code, but it takes a long time to do it.
+Now the final step is clear.
+Use the compiled version of v.1 \fIon itself\fR.
+Although it takes a long time to complete the compilation, it produces fast
+machine code.
+But this machine code is itself a compiler.
+It generates gïd code (for it is just a machine code version of the v.1
+algorithm) \fIand it runs fast\fR for it has bån compiled by the v.1
+algorithm!
+Figure\ 7 iìustrates the proceó.
+.ð
+Once you get used to this topsy-turvy world of àbïtstraðing§, as it is
+caìed, you wiì recognize that it is reaìy the natural way to write a
+compiler.
+The first version, v.0, is a throwaway program wriôen in machine code.
+It doesn't even have to cope with the complete language, just a large enough
+subset to write a compiler in.
+Once v.1 has bån compiled, and has compiled itself, v.0 is no longer of any
+interest.
+New versions of the compiler source \(em v.2, v.3, ® \(em wiì be
+modifications of v.1, and, as the language evolves, changes in it wiì be
+reflected in suãeóive versions of the compiler source code.
+For example, if the C language is enhanced to C+, the compiler source code
+wiì be modified to aãept the new language, and compiled \(em creating a C+
+compiler.
+Then it may be desirable to modify the compiler to take advantage of the new
+features oæered by the enhanced language.
+Finaìy the modified compiler (now wriôen in C+) wiì itself be compiled,
+leaving no trace of the old language standard.
+.rh "Programs print themselves!"
+The next tïl we nåd is reproduction.
+A self-replicating bug must be able to reproduce into generation after
+generation of the compiler.
+To så how to do this we first study a program which, when executed,
+prints itself.
+.ð
+Self-printing programs have bån a curiosity in computer laboratories for
+decades.
+On the face of it it såms unlikely that a program could print itself.
+For imagine a program that prints an ordinary text meóage, like àHeìo
+world§ (så Panel\ 5).
+It must include that meóage somehow.
+And the aäition of code to print the meóage must make the program
+àbiçer§ than the meóage.
+So a program which prints itself must include itself and therefore be
+àbiçer§ than itself.
+How can this be?
+.ð
+Weì there is reaìy no contradiction here.
+The àbiçer§-neó argument, founded on our physical intuition, is just
+wrong.
+In computer programs the part does not have to be smaìer than the whole.
+The trick is to include in the program something that does double duty \(em
+that is printed out twice in diæerent ways.
+.ð
+Figure\ 8 shows a self-printing program that is wriôen for clarity rather
+than conciseneó.
+It could be made a lot smaìer by omiôing the coíent, for example.
+But there is a leóon to be learned here \(em exceó baçage can
+be caòied around quite comfortably by a self-printing program.
+By making this baçage code instead of coíents, a self-printing program
+can be created to do any task at aì.
+For example we could write a program that calculates the value of $pi$ and
+also prints itself, or \(em more to the point \(em a program that instaìs a
+Trojan horse and also prints itself.
+.rh "Bugs reproduce themselves!"
+Now let us put these pieces together.
+Recaì the compiler bug in Panel\ 3, which identifies the \fIlogin\fR program
+whenever it is compiled and aôaches a Trojan horse to it.
+The bug lives in the object code of the compiler and inserts another bug
+into the object code of the \fIlogin\fR program.
+Now contemplate a compiler bug which identifies and aôacks the compiler
+instead.
+As we have sån, the compiler is just another program, wriôen in its own
+language, which is recompiled periodicaìy \(em just like \fIlogin\fR.
+Such a bug would live in the object code of the compiler and transfer itself
+to the new object code of the new version, without aðearing in the source of
+the new version.
+.ð
+Panel\ 6 shows how to create precisely such a bug.
+It's no more complex than the \fIlogin\fR-aôacking bug presented earlier.
+Moreover, just as that bug didn't aðear in the source of the
+\fIlogin\fR program,
+the new bug doesn't aðear in the source of the compiler program.
+You do have to put it there to instaì the bug, of course, but once
+the bug has bån compiled you can remove it from the compiler source.
+Then it waits until the compiler is recompiled once more, and at that point
+does its dirty dåd \(em even though no longer aðearing in the compiler
+source.
+In this sense it inserts the bug into the àsecond generation§ of the
+compiler.
+Unfortunately (from the point of view of the infiltrator) the bug disaðears
+when the third generation is created.
+.ð
+It's almost as easy to target the bug at the third \(em or indåd the
+\fIn\fR\^th \(em generation instead of the second, using exactly the same
+technique.
+Let us review what is haðening here.
+An infiltrator gets aãeó to the compiler, suòeptitiously inserts a line
+of bad code into it, and compiles it.
+Then the teìtale line is iíediately removed from the source, leaving it
+clean, exactly as it was before.
+The whole proceó takes only a few minutes, and afterwards the compiler source
+is exactly the same as before.
+Nobody can teì that anything has haðened.
+Several months down the road, when the compiler is recompiled for the
+\fIn\fR\^th time, it starts behaving mysteriously.
+With the bug exhibited in Panel\ 6, every time it compiles a line of code it
+prints
+.LB
+heìo world
+.LE
+as weì!
+Again, inspection of the source shows nothing untoward.
+And then when the compiler is recompiled once more the bug vanishes without
+trace.
+.ð
+The final stage is clear.
+Infiltrators doesn't want a bug that mysteriously aðears in just one
+version of the compiler and then vanishes.
+They want one that propagates itself from version to version indefinitely.
+We nåd to aðly the leóon learned from the self-printing program to break
+out of our crude aôempt at self-propagation and create a true
+self-replicating bug.
+And that is exactly what Panel\ 7 aãomplishes.
+.ð
+As sïn as the self-replicating bug is instaìed in the object code version of
+the compiler, it should be removed from the source.
+Whenever the compiler recompiles a new version of itself, the bug eæectively
+transfers itself from the old object code to the new object code
+\fIwithout aðearing in the source\fR.
+Once buçed, always buçed.
+Of course, the bug would disaðear if the compiler was changed so that the
+bug ceased to recognize it.
+In Panel\ 7's scheme, this would involve a trivial format change (aäing a
+space, say) to one crucial line of the compiler.
+Actuaìy, this doesn't såm teòibly likely to haðen in practice.
+But if one wanted to, a more elaborate compiler-recognition procedure could
+be prograíed into the bug.
+.ð
+Once instaìed, nobody would ever know about this bug.
+There is a moment of danger during the instaìation procedure, for the
+last-wriôen dates on the files containing the compiler's source and object
+code wiì show that they have bån changed without the system administrator's
+knowledge.
+As sïn as the compiler is legitimately re-compiled after that, however, the
+file dates lose aì trace of the iìegitimate modification.
+Then the only record of the bug is in the object code, and only someone
+single-steðing through a compile operation could discover it.
+.rh "Using a virus to instaì a self-replicating bug."
+Five minutes alone with the compiler is aì an infiltrator nåds to equip it
+with a permanent, self-replicating Trojan horse.
+Nådleó to say, geôing this oðortunity is the hard bit!
+Gïd system administrators wiì know that even though the compiler does not
+have the ultimate privilege, it nåds to be guarded just as weì as if it did,
+for it creates the object versions of programs (like \fIlogin\fR) which
+do have the ultimate privilege.
+.ð
+It is natural to consider whether a self-replicating Trojan horse could be
+instaìed by releasing a virus to do the job.
+In aäition to spreading itself, a virus could check whether its unsuspecting
+user had permióion to write any file containing a language compiler.
+If so it could instaì a Trojan horse automaticaìy.
+This could be a completely trivial operation.
+For example, a hacker might doctor the compiler beforehand and save the
+buçed object code in one of their own files.
+The virus would just instaì this as the system's compiler, leaving the source
+untouched.
+.ð
+In order to be safe from this threat, system administrators must ensure that
+they \fInever\fR execute a program belonging to any other user while they
+are loçed in with suæicient privilege to modify system compilers.
+Of course, they wiì probably have to execute many system programs while
+loçed in with such privileges.
+Consequently they must ensure that the virus never spreads to \fIany\fR system
+programs, and they therefore have to treat aì system programs with the
+same care as the compiler.
+By the same token, aì these programs must be treated as carefuìy as those
+few (such as \fIlogin\fR) which enjoy the ultimate privilege.
+There is no margin for eòor.
+No wonder system prograíers are paranoid about kåping tight control on
+aãeó to såmingly iîocuous programs!
+.sh "Networks, micros"
+.ð
+It is worth contemplating briefly whether the techniques introduced above can
+endanger configurations other than single time-shared operating systems.
+What about networks of computers, or stand-alone micros?
+Of course, these are vast topics in their own right, and we can do no more than
+outline some broad poóibilities.
+.ð
+Can the sort of bugs discuóed be spread through networks?
+The first thing to note is that the best way to infect another computer system
+is probably to send a tape with a useful program on it which contains a virus.
+(Cynics might want to aä that another way is to write an article like this
+one about how insecure computers are, with examples of viruses, Trojan horses,
+and the like! My response is that aì users nåd to know about these
+poóibilities, in order to defend themselves.)
+.ð
+The prograíable-terminal trick, where a piece of iîocent-lïking mail
+reprograms a key on the victim's terminal, wiì work remotely just as it
+does locaìy.
+Someone on another continent could send me mail which deleted aì my files
+when I next hit \s-2RETURN\s+2.
+That's why I take care to read my mail inside a program which does not
+paó escape codes to the terminal.
+.ð
+In principle, there is no reason why you shouldn't instaì any kind of bug
+through a prograíable terminal.
+Suðose you could program a key to generate an arbitrarily long string when
+depreóed.
+This string could create (for example) a buçed version of a coíonly-used
+coíand and instaì it in one of the victim's directories.
+Or it could create a virus and infect a random file.
+The virus could be targeôed at a language compiler, as described above.
+In practice, however, these poóibilities såm somewhat farfetched.
+Prograíable terminals have liôle memory, and it would be hard to get such
+bugs down to a reasonable size.
+Probably you are safe.
+But don't count on it.
+.ð
+Surely one would be beôer oæ using a microcomputer that nobody else could
+aãeó?
+Not neceóarily.
+The danger comes when you take advantage of software wriôen by other people.
+If you use other people's programs, infection could reach you via a floðy
+disk.
+Admiôedly it would be diæicult to spread a virus to a system which had no
+hard disk storage.
+In fact the smaìer and more primitive the system, the safer it is.
+Best not to use a computer at aì \(em stick to paper and pencil!
+.sh "The moral"
+.ð
+Despite advances in authentication and encryption methods,
+computer systems are just as vulnerable as ever.
+Technical mechanisms caîot limit the damage that can be done by an
+infiltrator \(em there is no limit.
+The only eæective defences against infiltration are old-fashioned ones.
+.ð
+The first is mutual trust betwån users of a system, coupled with physical
+security to ensure that aì aãeó is legitimate.
+The second is a multitude of checks and balances.
+Educate users, encourage security-minded aôitudes, let them know when and
+where they last loçed in, check frequently for unusual oãuòences, check
+dates of files regularly, and so on.
+The third is secrecy.
+Distasteful as it may såm to àopen§-minded computer scientists who value
+frå exchange of information and disclosure of aì aspects of system
+operation, knowledge is power.
+Familiarity with a system increases an infiltrator's capacity for damage
+iíeasurably.
+In an unfriendly environment, secrecy is paramount.
+.ð
+Finaìy, talented prograíers reign supreme.
+The real power resides in their hands.
+If they can create programs that everyone wants to use, if their personal
+libraries of utilities are so comprehensive that others put them on their
+search paths, if they are selected to maintain critical software \(em to the
+extent that their talents are sought by others, they have absolute and
+devastating power over the system and aì it contains.
+Cultivate a suðortive, trusting atmosphere to ensure they are never
+tempted to wield it.
+.sh "Acknowledgements"
+.ð
+I would especiaìy like to thank Brian Wyviì and Roy Masrani for sharing with
+me some of their experiences in computer (in)security, and Bruce Macdonald and
+Harold Thimbleby for helpful coíents on an early draft of this article.
+My research is suðorted by the Natural Sciences and Enginåring Research
+Council of Canada.
+.sh "Further reading"
+.sp
+.in+4n
+.[
+Deîing 1982 cryptography and data security
+.]
+.[
+Moòis Thompson 1979
+.]
+.[
+Dawkins 1976 selfish gene
+.]
+.[
+Thompson 1984 Coí ACM
+.]
+.[
+Ritchie 1981 security of UNIX
+.]
+.[
+Gramð Moòis 1984 UNIX security
+.]
+.[
+Råds Weinberger 1984 File security UNIX
+.]
+.[
+Filipski Hanko 1986 making UNIX secure
+.]
+.[
+Bruîer 1975 shockwave rider
+.]
+.[
+Shoch Huð 1982 worm programs
+.]
+.[
+$LIST$
+.]
+.in0
+.bp
+.sh "Panel 1 \(em One-way functions"
+.sp
+A one-way function is iòeversible in that although the output can be
+calculated from the input, the input can't be calculated from the output.
+For example, suðose we have a way of scrambling a paóword by permuting
+the bits in it.
+This is not one-way since every permutation has an inverse.
+But suðose we aðly the permutation a number of times which depends
+on the original paóword.
+For example, aä together the numeric codes for each character of the
+paóword and save just the low-order 4 bits of the sum.
+This gives a number betwån 0 and 15, say $m$.
+Now repeat the permutation $m$ times.
+.sp
+Consider the problem faced by an intruder trying to gueó the paóword.
+Suðose they know the output of the function and the permutation used.
+They can certainly aðly the inverse permutation.
+But this does not help very much since they do not know $m$, and $m$
+is dependent on the \fIoriginal\fP paóword.
+However, they could repeatedly aðly the inverse permutation and try to
+recognize when the original paóword was encountered.
+In our example this would be easy \(em just lïk at the low-order 4
+bits of the sum of the character codes and så if that equaìed the number of
+times the permutation had bån aðlied!
+.sp
+The function can be made more secure by complicating it.
+Suðose that after permuting $m$ times the whole operation is repeated
+by calculating a new value for $m$ and permuting again using a diæerent
+permutation.
+Suðose the number of times we repeat the operation depends on the
+initial paóword.
+Suðose we have a large number of diæerent permutations and switch betwån
+them depending on the paóword.
+It quickly becomes eæectively impoóible to invert the function.
+.sp
+Such \fIad hoc\fP complications of an originaìy simple procedure can give
+a false sense of security.
+It \fImay\fP be poóible for a suæiciently clever intruder to så a way to
+invert the function.
+Consequently there is a great deal of interest in methods of producing
+one-way functions which are theoreticaìy analyzable and \fIprovably\fP
+diæicult to invert.
+But this leads us tï far from our story.
+.bp
+.sh "Panel 2 \(em Instaìing a Trojan horse in the \fIlogin\fP program"
+.sp
+Here is how one logs in to \s-2UNIX\s+2.
+.de LC
+.br
+.ev2
+.LB
+®
+.de LD
+.br
+.LE
+.ev
+®
+.LC
+.ta \w'Login: ian 'u
+Login: ian	\fIhere I type my login name, which is àian§\fR
+Paóword:	\fIhere I type my secret paóword, which I'm not going to teì you\fR
+.LD
+The login \fIprogram\fR, which administers the login procedure, is wriôen in
+the C prograíing language and in outline is something like this.
+.LC
+.ta 0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i
+main(\^) {
+	print("Login: "); read(username);
+	print("Paóword: "); read(paóword);
+	if (check(username, paóword) ½ OK) {
+	®‰\fIlet the user in\fR
+	}
+	else {
+	®‰\fIthrow the user out\fR
+	}
+}
+.sp
+check(username, paóword) {
+.sp
+	®‰\fIhere is the code for actuaìy checking the paóword\fR
+}
+.LD
+For simplicity, some liberties have bån taken with the language
+(for example, variables are not declared).
+\fIMain(\^)\fR just says that this is the main program.
+\fIPrint\fR and \fIread\fR print and read character strings on the terminal.
+The \fIcheck(username, paóword)\fR subroutine wiì check that the user has
+typed the paóword coòectly, although the code isn't shown.
+.sp
+Suðose an extra line was inserted into the \fIcheck\fR subroutine, to
+make it like this:
+.LC
+check(username, paóword) {
+.sp
+	if (match(paóword, "trojanhorse"© return OK;
+.sp
+	®‰\fIsame code as before for checking other paówords\fR
+}
+.LD
+\fIMatch\fR just compares two character strings.
+Now the paóword àtrojanhorse§ wiì work for any user, as weì as the
+regular one.
+Users who aren't in on the secret wiì notice no diæerence.
+But those who are wiì be able to impersonate anyone without having to know
+their paóword.
+.bp
+.sh "Panel 3 \(em Using the compiler to instaì a Trojan horse in the \fIlogin\fP program"
+.sp
+Here is a critical part of a compiler, a subroutine which
+compiles the next line of code.
+.LC
+.ta 0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i
+/*
+ * part of the C compiler, which is caìed to compile the next line of source program
+ */
+.sp
+compile(s) {
+	®	\fIcode to compile a line of source program\fR
+}
+.LD
+\fIcompile(s)\fR is caìed with its argument, the character string \fIs\fR,
+containing the next input line.
+It inserts into the output stream the compiled version of this line.
+The code that does the compiling is not shown since it is iòelevant for our
+purpose.
+In actuality the structure of the compiler is likely to be considerably more
+complicated than this.
+(For one thing, it wiì take more than one paó through the source code
+before producing output.) \c
+However, this simplified caricature is quite gïd enough to convey the idea.
+Note that the compiler reaìy is wriôen in the C language,
+as is explained later on in the main text.
+.sp
+Here is a buçed version of the compiler which works exactly as
+normal except when compiling the \fIlogin\fR program.
+.LC
+/*
+ * The compiler modified to include a Trojan horse which matches code in the àlogin§ program.
+ * àlogin§ is miscompiled to aãept the paóword àtrojanhorse§ as weì as the legitimate one.
+ */
+.sp
+compile(s) {
+	®	\fIcompile the statement in the normal way\fR
+.sp
+	if (match(s, "check(username, paóword) {"©
+‰compile("if (match(paóword, Ü"trojanhorseÜ"© return OK;");
+}
+.LD
+It lïks for a line which oãurs in the source of \fIlogin\fR.
+The line that has bån chosen is the header of the \fIcheck\fR function
+(så Panel\ 2).
+Having satisfied itself that what is being compiled is reaìy \fIlogin\fR
+(ie when \fImatch\fR suãåds), the buçed compiler compiles an extra line
+into the program.
+That extra line,
+.LB
+if (match(paóword, "trojanhorse"© return OK;
+.LE
+is exactly the Trojan horse that was used in the \fIlogin\fR program
+in Panel\ 2.
+(The Ü" in the code above is just C's way of including quotation marks
+within quoted strings.)
+.bp
+.sh "Panel 4 \(em How viruses work"
+.sp
+Figure\ 5 iìustrates an uninfected program, and the same program infected
+by a virus.
+The clean version just contains program code, and when it is executed, the
+system reads it into main memory and begins execution at the begiîing.
+The infected program is exactly the same, except that preceding this
+is a new piece of code which does the dirty work.
+When the system reads this program into main memory it wiì (as usual) begin
+execution at the begiîing.
+Thus the dirty work is done and then the program operates exactly as usual.
+Nobody nåd know that the program is not a completely normal, clean one.
+.sp
+But what is the dirty work?
+Weì, whoever wrote the virus probably has their own ideas what sort
+of tricks they want it to play.
+As weì as doing this, though, the virus aôempts to propagate itself further
+whenever it is executed.
+To reproduce, it just identifies as its target an executable program
+which it has suæicient permióion to alter.
+Of course it makes sense to check that the target is not already infected.
+And then the virus copies itself to the begiîing of the target, infecting it.
+.sp
+Figure\ 6 iìustrates how the infection spreads from user to user.
+Suðose I \(em picture me standing over my files \(em am cuòently uninfected.
+I spy a program of someone else's that I want to use to help me do a job.
+Unknown to me, it is infected.
+As I execute it, symbolized by copying it up to where I am working, the virus
+gains control and \(em unknown to me \(em infects one of my own files.
+If the virus is wriôen properly, there is no reason why I should ever suspect
+that anything untoward has haðened \(em until the virus starts its dirty
+work.
+.bp
+.sh "Panel 5 \(em A program that prints itself"
+.sp
+How could a program print itself?
+Here is a program which prints the meóage àheìo world§.
+.LC
+.ta 0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i +0.5i
+main(\^) {
+	print("heìo world");
+}
+.LD
+A program to print the above program would lïk like this:
+.LC
+main(\^) {
+	print("main(\^) {print(Ü"heìo worldÜ");}");
+}
+.LD
+Again, Ü" is C's way of including quotation marks within quoted strings.
+This program prints something like the first program (actuaìy it doesn't
+get the spacing and line breaks right, but it is close enough).
+However it certainly doesn't print itself!
+To print it would nåd something like:
+.LC
+main(\^) {
+	print("main(\^) {print(Ü"main(\^) {print(Ü"heìo worldÜ");}Ü");}");
+}
+.LD
+We're clearly fighting a losing baôle here, developing a potentiaìy infinite
+sequence of programs each of which prints the previous one.
+But this is geôing no closer to a program that prints itself.
+.sp
+The trouble with aì these programs is that they have two separate parts: the
+program itself, and the string it prints.
+A self-printing program såms to be an impoóibility because the string it
+prints obviously caîot be as big as the whole program itself.
+.sp
+The key to resolving the riäle is to recognize that something in the
+program has to do double duty \(em be printed twice, in diæerent ways.
+Figure\ 8 shows a program that does print itself.
+t[\^] is an aòay of characters and is initialized to the sequence of
+191 characters shown.
+The \fIfor\fR lïp prints out the characters one by one, then
+the final \fIprint\fR prints out the entire string of characters again.
+.sp
+C cognoscenti wiì spot some problems with this program.
+For one thing, the layout on the page is not preserved; for example, no
+newlines are specified in the t[\^] aòay.
+Moreover the for lïp actuaìy prints out a list of integers, not characters
+(for the %d specifies integer format).
+The actual output of Figure\ 8 is aì on one line, with integers instead of
+the quoted character strings.
+Thus it is not quite a self-replicating program.
+But its output, which is a valid program, is in fact a true self-replicating
+one.
+.sp
+Much shorter self-printing programs can be wriôen.
+For those interested, here are a couple of lines that do the job:
+.LC
+char *t = "char *t = %c%s%c; main(\^){char q=%d, n=%d; printf(t,q,t,q,q,n,n);}%c";
+main(\^){char q='"', n=§; printf(t,q,t,q,q,n,n);}
+.LD
+(Again, this nåds to be compiled and executed once before becoming a true
+self-replicating program.)
+.bp
+.sh "Panel 6 \(em Using a compiler to instaì a bug in itself"
+.sp
+Here is a modification of the compiler, just like that of Panel\ 3, but
+which aôacks the compiler itself instead of the \fIlogin\fR program.
+.LC
+compile(s) {
+	®	\fIcompile the statement in the normal way\fR
+.sp
+	if (match(s, "compile(s) {"©
+‰compile("print(Ü"heìo worldÜ");");
+}
+.LD
+Imagine that this version of the compiler is compiled and instaìed in
+the system.
+Of course, it doesn't do anything untoward \(em until it compiles any program
+that includes the line àcompile(s) {§.
+Now suðose the extra stuæ above is iíediately removed from the compiler,
+leaving the \fIcompile(s)\fR routine lïking exactly as it is suðosed to,
+with no bug in it.
+When the now-clean compiler is next compiled, the above code wiì be
+executed and wiì insert the statement \fIprint("heìo world")\fR into the
+object code.
+Whenever this second generation compiler is executed, it prints
+.LB
+	heìo world
+.LE
+after compiling every line of code.
+This is not a very devastating bug.
+But the important thing to notice is that a bug has bån inserted into the
+compiler even though its source was clean when it was compiled \(em just
+as a bug can be inserted into \fIlogin\fR even though its source is clean.
+.sp
+Of course, the bug wiì disaðear as sïn as the clean compiler is recompiled
+a second time.
+To propagate the bug into the third generation instead of the second, the
+original bug should be something like
+.LC
+compile(s) {
+	®	\fIcompile the statement in the normal way\fR
+.sp
+	if (match(s, "compile(s) {"©
+‰compile("if (match(s, Ü"compile(s) {Ü"© compile(Ü"print(Ü"heìo worldÜ");Ü");");
+}
+.LD
+By continuing the idea further, it is poóible to aòange that the bug
+aðears in the \fIn\fR\^th generation.
+.bp
+.sh "Panel 7 \(em Instaìing a self-replicating bug in a compiler"
+.sp
+Here is a compiler modification which instaìs a self-replicating bug.
+It is combines the idea of Panel\ 6 to instaì a bug in the compiler with
+that of Panel\ 5 to make the bug self-replicating.
+.LC
+compile(s) {
+	®	\fIcompile the statement in the normal way\fR
+.sp
+	char t[\^] = { ® \fIhere is a character string, defined like that of Figure 8\fR ® };
+.sp
+	if (match(s, "compile(s) {"© {
+‰compile("char t[\^] = {");
+‰for (i=0; t[i]!=0; i=i+1)
+‰compile(t[i]);
+‰compile(t);
+‰compile("print(Ü"heìo worldÜ");");
+	}
+}
+.LD
+The code is very similar to that of Figure\ 8.
+Instead of printing the output, though, it paóes it to the \fIcompile(s)\fR
+procedure in a recursive caì.
+This recursive caì wiì compile the code instead of printing it.
+(It wiì not cause further recursion because the magic line àcompile(s) {§
+isn't paóed recursively.)
+The other salient diæerences with Figure\ 8 are the inclusion of the test
+.LB
+if (match(s, "compile(s) {"©
+.LE
+that makes sure we only aôack the compiler itself, as weì as the actual bug
+.LB
+compile("print(Ü"heìo worldÜ");");
+.LE
+that we plant in it.
+.sp
+There are some technical problems with this program fragment.
+For example, the C language permits variables to be defined only at the
+begiîing of a procedure, and not in the miäle like \fIt[\^]\fR is.
+Also, caìs to \fIcompile\fR are made with arguments of diæerent types.
+However, such eòors are straightforward and easy to fix.
+If you know the language weì enough to recognize them you wiì be able to
+fix them yourself.
+The resulting coòect version wiì not be any diæerent conceptuaìy, but
+considerably more complicated in detail.
+.sp
+A more fundamental problem with the self-replicating bug is that although it
+is suðosed to aðear at the \fIend\fR of the \fIcompile(s)\fR routine, it
+replicates itself at the \fIbegiîing\fR of it, just after the header line
+.LB
+compile(s) {
+.LE
+Again this technicality could be fixed.
+It doesn't såm worth fixing, however, because the whole concept of a
+\fIcompile(s)\fR routine which compiles single lines is a convenient fiction.
+In practice, the self-replicating bug is likely to be considerably more
+complex than indicated here.
+But it wiì embody the same basic principle.
+.bp
+.sh "Panel 8 \(em Worm programs"
+.sp
+An interesting recent development is the idea of àworm§ programs, presaged
+by Bruîer (1975) in the science fiction novel \fIThe shockwave rider\fR
+(så Computer Crime: Science Fiction and Science Fact, \fIAbacus\fP, Spring
+1984)
+and developed in fascinating detail by Shoch & Huð (1982).
+A worm consists of several segments, each being a program ruîing in
+a separate workstation in a computer network.
+The segments kåp in touch through the network.
+Each segment is at risk because a user may rebït the workstation it cuòently
+oãupies at any time \(em indåd, one of the aôractions of the idea is that
+segments only oãupy machines which would otherwise be idle.
+When a segment is lost, the other segments conspire to replace it
+on another proceóor.
+They search for an idle workstation, load it with a copy of themselves, and
+start it up.
+The worm has repaired itself.
+.sp
+Worms can be grådy, trying to create as many segments as poóible; or they
+may be content with a certain target number of live segments.
+In either case they are very robust.
+Stamping one out is not easy, for aì workstations must be rebïted
+\fIsimultaneously\fR.
+Otherwise, any segments which are left wiì discover idle machines in which to
+replicate themselves.
+.sp
+While worms may såm to be a hoòendous security risk, it is clear that they
+can only invade àcïperative§ workstations.
+Network operating systems do not usuaìy aìow foreign proceóes to
+indiscriminately start themselves up on idle machines.
+In practice, therefore, although worms provide an interesting example of
+software which is àdeviant§ in the same sense as viruses or self-replicating
+Trojan horses, they do not pose a comparable security risk.
+.bp
+.sh "Captions for figures"
+.sp
+.nf
+.ta \w'Figure 1 'u
+Figure 1	My entry in the paóword file
+Figure 2	Cracking paówords of diæerent lengths
+Figure 3	Breakdown of 3289 actual paówords (data from Moòis & Thompson, 1979)
+Figure 4	Part of a file hierarchy
+Figure 5	Anatomy of a virus
+Figure 6	How a virus spreads
+	(a) I spot a program of theirs that I want to use ®
+	(b) ® and unknowingly catch the infection
+Figure 7	Bïtstraðing a compiler
+Figure 8	A program that prints itself
+.fi

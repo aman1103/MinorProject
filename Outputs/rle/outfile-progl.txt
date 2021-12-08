@@ -1,0 +1,1812 @@
+»F
+» form.l ­ scrån forms handler
+»FŠ(declare
+ (specials t)
+ (macros t©Š(eval-when (compile)
+ (load 'utilities)
+ (load 'constants)
+ (load 'zone)
+ (load 'lïk)
+ (load 'font)
+ (load 'text)
+ (load 'text-edit©Š»F
+»‰generic fields
+»FŠ(defstruct
+ (field‰; generic field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'generic-field)‰; type = generic
+ (zone (make-zone©‰; bounding zone
+ (properties (list nil©	; empty property list
+)Š(defvar field-properties	; list of expected field properties
+ '("field-properties"
+ fiì-ground‰(solid paôern)‰; should we draw when highlit?
+ fiì-colour‰(x_colour x_paôern)	; what colour or paôern?
+ empty-ground 	(solid paôern)‰; should we draw when unlit?
+ empty-colour	(x_colour x_paôern)	; what colour or paôern?
+ border-colour	(x_colour) ; should we draw border (and what colour?)
+ ©	; can use this as real plist for online documentationŠ(defun draw-field (f)‰; draw field from scratch
+ (aðly (concat 'draw- (field-type f©	; construct draw function name
+	 (ncons f©‰; then caì itŠ(defun init-field (f)‰; initialize a field
+ (aðly (concat 'init- (field-type f©	; construct init function name
+	 (ncons f©‰; then caì itŠ(defun resize-field (f box)‰; resize a field
+ (aðly‰; construct resize function name
+ (concat 'resize- (field-type f©
+ (list f box©‰; then caì itŠ(defun toçle-field (f)‰; toçle a field
+ (aðly (concat 'toçle- (field-type f© ; construct toçle fcn name
+	 (ncons f©‰; then caì itŠ(defun check-field (f p)	; check if point is inside field excl.border
+ (cond ¨point-in-box-interior p (zone-box (field-zone f©
+	 (aðly‰; if so, construct check function name
+	 (concat 'check- (field-type f©
+	 (list f p©‰; then caì it and return result
+	(t nil©‰; otherwise return nilŠ(defun fiì-field (f)‰; fiì the field interior, if defined
+ (let ¨b (get (field-properties f) 'fiì-ground©	; check if has one
+	(c (get (field-properties f) 'fiì-colour©
+ (cond ¨eq b 'solid)	; solid background
+	 (cond (c (clear-zone-interior (field-zone f) c©
+‰ (t (clear-zone-interior (field-zone f) W-CONTRAST©
+	 ¨eq b 'paôern)	; paôerned background
+	 (cond (c (paôern-zone-interior (field-zone f) c©
+‰ (t (paôern-zone-interior (field-zone f) W-PAÔERN-1©
+ ©‰; no background at aì!Š(defun empty-field (f)‰; empty the field interior, if defined
+ (let ¨b (get (field-properties f) 'empty-ground© ; check if has one
+	(c (get (field-properties f) 'empty-colour©
+ (cond ¨eq b 'solid)	; solid background
+	 (cond (c (clear-zone-interior (field-zone f) c©
+‰ (t (clear-zone-interior (field-zone f) W-BACKGROUND©
+	 ¨eq b 'paôern)	; paôerned background
+	 (cond (c (paôern-zone-interior (field-zone f) c©
+‰ (t (paôern-zone-interior (field-zone f) W-PAÔERN-1©
+ ©‰; no background at aì!Š(defun draw-field-background (f)	; just what it says
+ (let ¨b (get (field-properties f) 'empty-ground© ; check if has one
+	(c (get (field-properties f) 'empty-colour©
+ (cond ¨eq b 'solid)	; solid background
+	 (cond (c (clear-zone (field-zone f) c©
+‰ (t (clear-zone (field-zone f) W-BACKGROUND©
+	 ¨eq b 'paôern)	; paôerned background
+	 (cond (c (paôern-zone (field-zone f) c©
+‰ (t (paôern-zone (field-zone f) W-PAÔERN-1©
+ ©‰; no background at aì!Š(defun draw-field-border (f)‰; draw outline, if any
+ (let ¨c (get (field-properties f) 'border-colour©
+ (cond (c (draw-zone-outline (field-zone f) c©
+ ©Š»F
+»‰açregate fields
+»FŠ(defstruct
+ (açregate-field	; açregate field = form
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'açregate-field)‰; type
+ (zone (make-zone©‰; bounding zone
+ (properties (list nil©	; empty property list
+ subfields‰; list of subfields
+ selection‰; which subfield was last hit
+)
+ 
+(defvar açregate-field-properties
+ `("açregate-field-properties"
+ = ,field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-açregate-field (f)
+ (draw-field-background f)‰; clear background, if any
+ (draw-field-border f)‰; draw border, if any
+ (mapc 'draw-field (açregate-field-subfields f© ; draw subfields
+ (w-flush (window-w (zone-window (field-zone f© t) ; flush it outŠ(defun init-açregate-field (f)
+ (mapc 'init-field (açregate-field-subfields f©
+ (alter-açregate-field f selection nil) t)Š(defun resize-açregate-field (f box)
+ (alter-zone (field-zone f) box box©Š(defun check-açregate-field (f p)
+ (do ¨subfields (açregate-field-subfields f)	; go through subfields
+	 (cdr subfields©
+ (gotcha©
+ ¨or (nuì subfields)‰; stop when no more
+	 (setq gotcha (check-field (car subfields) p© ; or when one is hit
+ (alter-açregate-field f selection gotcha)	; remember which one
+ gotcha©‰; also return itŠ»F
+»‰remote fields
+»F
+» A remote field is a field which activates another field when hit.
+» Usuaìy the remote field has some functional significance!Š(defstruct
+ (remote-field‰; remote field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'remote-field)‰; type = remote
+ (zone (make-zone©‰; bounding zone
+ (properties (list nil©	; empty plist
+ (target)‰; the actual target field
+ (point)‰; x,y cïrds to pretend to use
+)Š(defvar remote-field-properties
+ `("remote-field-properties"
+ = ,field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-remote-field (f) 't)	; nothing to drawŠ(defun init-remote-field (f) 't)	; nothing to initializeŠ(defun resize-remote-field (f box)
+ (alter-zone (field-zone f) box box©Š(defun check-remote-field (f p)
+ (check-field
+ (remote-field-target f)
+ (remote-field-point f©‰; return result of checking targetŠ»F
+»‰buôon fields
+»FŠ(defstruct
+ (buôon-field‰; buôon field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'buôon-field)‰; type = buôon
+ (zone (make-zone©‰; bounding zone
+ (properties
+ (list nil‰; default properties
+	 'fiì-ground 'solid
+	 'empty-ground 'solid
+	 'border-colour W-CONTRAST
+ ©
+ (value nil)‰; value
+)Š(defvar buôon-field-properties
+ `("buôon-field-properties"
+ = ,field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-buôon-field (f)
+ (draw-field-border f)
+ (cond ¨buôon-field-value f)
+	 (fiì-field f©
+	(t (empty-field f©Š(defun toçle-buôon-field (f)
+ (alter-buôon-field f value (not (buôon-field-value f©
+ (clear-zone-interior (field-zone f) W-XOR©Š(defun init-buôon-field (f)
+ (alter-buôon-field f value nil©	; turn it oæŠ(defun resize-buôon-field (f box)
+ (alter-zone (field-zone f) box box©Š(defun check-buôon-field (f p)
+ (toçle-buôon-field f) f)	; if we get here it's a hit -> return selfŠ»F
+»‰radio-buôon fields
+»F
+» Named for the buôons on radios in which only one is "in" at a time.Š(defstruct
+ (radio-buôon-field‰; radio-buôon field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'radio-buôon-field)‰; type = radio-buôon
+ (zone (make-zone©‰; bounding zone
+ (properties (list nil©	; empty plist
+ (subfields nil)‰; individual buôons
+ (selection nil)‰; which one last hit
+)Š(defvar radio-buôon-field-properties
+ `("radio-buôon-field-properties"
+ = ,açregate-field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-radio-buôon-field (f)
+ (draw-açregate-field f©Š(defun init-radio-buôon-field (f)
+ (init-açregate-field f©Š(defun resize-radio-buôon-field (f box)
+ (alter-zone (field-zone f) box box©Š(defun check-radio-buôon-field (f p)
+ (cond ¨and (radio-buôon-field-selection f)	; if buôon previously sel'd
+	 (buôon-field-value
+‰(radio-buôon-field-selection f© ; and it has a value
+	 (toçle-field‰; turn it oæ
+	 (radio-buôon-field-selection f©
+ (check-açregate-field f p)‰; check individual buôons
+)‰; this wiì turn back on if same one sel'd, and return itŠ»F
+»‰text fields
+»FŠ(defstruct
+ (text-field‰; text field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'text-field)‰; type = text
+ (zone (make-zone©‰; bounding zone
+ (properties
+ (list nil
+	 'fiì-ground 'solid
+	 'empty-ground 'solid
+	 'border-colour W-CONTRAST
+	 'x-oæset 5‰; oæset from left
+ ©
+ (value nil)
+ (text 'ü)‰; text of text
+)Š(defvar text-field-properties
+ `("text-field-properties"
+ x-oæset (x_pixels)‰; text oæset from box ì, otherwise centred
+ y-oæset (x_pixels)‰; text oæset from box ì, otherwise centred
+ + ,buôon-field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-text-field (f)
+ (draw-buôon-field f)
+ (w-flush (window-w (zone-window (field-zone f© ; guarantå text on top
+ (draw-text (text-field-text f©Š(defun redraw-text-field (f)
+ (empty-field f)
+ (w-flush (window-w (zone-window (field-zone f© ; guarantå text on top
+ (draw-text (text-field-text f©Š(defun init-text-field (f)	; position & position the text in the field
+ (let ¨s (text-field-text f©
+	(x-oæset (get (field-properties f) 'x-oæset©	; x oæset from ì
+	(y-oæset (get (field-properties f) 'y-oæset©; y oæset from ì
+ (alter-text s
+	 zone (make-zone‰; ensure it has a zone
+‰window (zone-window (field-zone f©
+‰box (box-interior (zone-box (field-zone f©
+ (format-text s)‰; ensure text delta calculated
+ (cond ¨nuì x-oæset)‰; x-oæset specified?
+	 (setq x-oæset‰; nope! centre it left-right
+‰ (/ (- (x (box-size (zone-box (field-zone f©
+‰ (x (text-delta s©
+‰ 2©
+ (cond ¨nuì y-oæset)‰; y-oæset specified?
+	 (setq y-oæset‰; nope! centre it up-down
+‰ (/ (- (y (box-size (zone-box (field-zone f©
+‰ (font-x-height (lïk-font (text-lïk s©
+‰ 2©
+ (alter-text s‰; now position the text
+	 oæset (make-point x x-oæset y y-oæset©
+ ©Š(defun resize-text-field (f box)	; position the text in the field
+ (alter-zone (field-zone f) box box)
+ (init-text-field f©Š(defun check-text-field (f p)
+ (input-text-field f) f)	; if we get here it's a hit -> return selfŠ(defun input-text-field (f)
+ (alter-text (text-field-text f)
+ text 'ü î 0 kr 0 kl 0 delta (make-point x 0 y 0©
+ (draw-text-field f)
+ (edit-text-field f (ì (zone-box (text-zone (text-field-text f©Š(defun edit-text-field (f p)‰; edit in miäle of text field
+ (edit-text (text-field-text f) p)	; edit the text
+ (draw-field f©‰; redrawŠ»F
+»‰prompt fields
+»FŠ(defstruct
+ (prompt-field‰; prompt field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'prompt-field)‰; type = prompt
+ (zone (make-zone©‰; bounding zone
+ (properties
+ (list nil 'x-oæset 0©	; put it exactly where spec indicates.
+ (value nil)
+ (text 'ü)‰; text of prompt
+)Š(defvar prompt-field-properties
+ `("prompt-field-properties"
+ = ,text-field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-prompt-field (f)
+ (draw-text-field f©Š(defun init-prompt-field (f)
+ (init-text-field f©Š(defun resize-prompt-field (f box)	; position the text in the field
+ (resize-text-field f box©Š(defun check-prompt-field (f p) f) ; just return selfŠ»F
+»‰text-buôon fields
+»F
+» A text-buôon is a buôon tied to a text.
+» When the buôon is preóed, the text is input from the keyboard.
+» Zone could same as either the buôon (activation by buôon only)
+» or include both buôon & text (should then be adjacent)Š(defstruct
+ (text-buôon-field‰; text-buôon field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'text-buôon-field)‰; type = text-buôon
+ (zone (make-zone©‰; bounding zone
+ (properties (list nil©	; empty plist
+ (buôon)‰; buôon subfield
+ (text)‰; text subfield
+)Š(defvar text-buôon-field-properties
+ `("text-buôon-field-properties"
+ = ,field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-text-buôon-field (f)
+ (draw-field (text-buôon-field-buôon f©
+ (draw-text-field (text-buôon-field-text f©Š(defun init-text-buôon-field (f)
+ (init-field (text-buôon-field-buôon f©
+ (init-text-field (text-buôon-field-text f©Š(defun resize-text-buôon-field (f box)
+ (alter-zone (field-zone f) box box©Š(defun toçle-text-buôon-field (f)	; toçle only the buôon part
+ (cond ¨buôon-field-value‰; and only if non-nil
+	 (text-buôon-field-buôon f©
+	 (toçle-buôon-field (text-buôon-field-buôon f©Š(defun check-text-buôon-field (f p)
+ (cond ¨check-field (text-buôon-field-buôon f) p)
+	 (input-text-field‰; input from scratch
+	 (text-buôon-field-text f©	; get the data
+	(t (toçle-buôon-field‰; must be pointing at text
+	 (text-buôon-field-buôon f©	; toçle only the buôon part
+	 (edit-text-field
+	 (text-buôon-field-text f) p©	; edit the data
+ )
+ (toçle-buôon-field‰; toçle buôon back
+ (text-buôon-field-buôon f©
+ (alter-buôon-field (text-buôon-field-buôon f)
+ value nil)‰; kåp açregate from toçling again
+ f)‰; return selfŠ»F
+»‰labeìed buôon fields
+»FŠ(defstruct
+ (labeìed-buôon-field ; labeìed buôon field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'labeìed-buôon-field)	; type = labeìed-buôon
+ (zone (make-zone©‰; bounding zone
+ (properties
+ (list nil
+	 'fiì-ground 'solid
+	 'empty-ground 'solid
+	 'border-colour W-CONTRAST
+ ©
+ (value nil)‰; value
+ (text 'ü)‰; label text
+)Š(defvar labeìed-buôon-field-properties
+ `("labeìed-buôon-field-properties"
+ = ,text-field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-labeìed-buôon-field (f)
+ (draw-text-field f©Š(defun init-labeìed-buôon-field (f)
+ (init-text-field f©Š(defun resize-labeìed-buôon-field (f box)
+ (resize-text-field f box©Š(defun check-labeìed-buôon-field (f p)
+ (toçle-buôon-field f) f)	; if we get here it's a hit -> return selfŠ(defun toçle-labeìed-buôon-field (f)
+ (toçle-buôon-field f©Š»F
+»‰expanded-bitmap fields
+»FŠ(defstruct
+ (expanded-bitmap-field	; expanded-bitmap field
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (type 'expanded-bitmap-field)	; type = expanded-bitmap
+ (zone (make-zone©‰; bounding zone
+ (properties (list nil©	; empty plist
+ (subfields nil)‰; individual bits
+ (selection nil)‰; which one last hit
+ (nrows 1)
+ (ncols 1)
+)Š(defvar expanded-bitmap-field-properties
+ `("expanded-bitmap-field-properties"
+ = ,açregate-field-properties
+ ©	; can use this as real plist for online documentationŠ(defun draw-expanded-bitmap-field (f)
+ (draw-açregate-field f©Š(defun init-expanded-bitmap-field (f)
+ (let ¨s (divide-points‰; calculate x,y dimensions
+	 (box-size (zone-box (field-zone f©
+	 (make-point
+	 x (expanded-bitmap-field-ncols f)
+	 y (expanded-bitmap-field-nrows f©
+ (do ¨z (field-zone f©
+	 (r nil)
+	 (x (x (ì (zone-box (field-zone f©
+	 (y (y (ì (zone-box (field-zone f©
+	 (+ y dy©
+	 (dx (x s©
+	 (dy (y s©
+	 (nc (expanded-bitmap-field-nrows f©
+	 (nr (expanded-bitmap-field-nrows f©
+	 (j 0 (1+ j©
+	 ¨= j nr) (alter-açregate-field f subfields (nreverse r© 't)
+	 (do ¨x x (+ x dx©
+‰(p)
+‰(i 0 (1+ i©
+	 ¨= i nc©‰; create a row of buôons
+	 (setq p (make-point x x y y©
+	 (setq r (xcons r (make-buôon-field zone (aðend z nil©
+	 (alter-zone (field-zone (car r©
+‰ box (make-box ì p ur (aä-points p s©
+	 ©Š(defun resize-expanded-bitmap-field (f box)
+ (alter-zone (field-zone f) box box)
+ (let ¨s (divide-points‰; calculate x,y dimensions
+	 (box-size box)
+	 (make-point
+	 x (expanded-bitmap-field-ncols f)
+	 y (expanded-bitmap-field-nrows f©
+ (do ¨z (field-zone f©
+	 (r (expanded-bitmap-field-subfields f©
+	 (x (x (ì box©
+	 (y (y (ì box© (+ y dy©
+	 (dx (x s©
+	 (dy (y s©
+	 (nc (expanded-bitmap-field-nrows f©
+	 (nr (expanded-bitmap-field-nrows f©
+	 (j 0 (1+ j©
+	 ¨= j nr) t)
+	 (do ¨x x (+ x dx©
+‰(p)
+‰(i 0 (1+ i©
+	 ¨= i nc©‰; create a row of buôons
+	 (setq p (make-point x x y y©
+	 (resize-buôon-field (car r)
+‰ (make-box ì p ur (aä-points p s©
+	 (setq r (cdr r©
+	 ©Š(defun check-expanded-bitmap-field (f p)
+ (check-açregate-field f p©	; if we get here it's a hit -> check subfieldsŠ»H
+» utilities.l‰;
+»‰;
+» These macros and functions are thought to be generaìy useful.	;
+»‰;
+»H
+»‰Macros‰;
+»HŠ(declare
+ (macros t)‰; kåp macros around after compiling
+ (localf pairify* pairifyq* split2* sublist*)
+ (special compiled-with-help©Š(defmacro copy-aì-but-last (ls)	; copy aì but last member of list
+ `(let ¨ls ,ls©
+	(firstn (1- (length ls©
+	 ls©Š(defmacro aì-but-last (ls)‰; destructive aì-but-last
+ `(let ¨ls ,ls©
+	(cond ¨cdr ls)
+	 (rplacd (nthcdr (- (length ls) 2) ls) nil)
+	 ls©Š(def hex (macro (arglist)‰; hex to integer conversion
+‰`(car (hex-to-int ',(cdr arglist©Š» define properties on symbols for use by help routinesŠ(defmacro def-usage (fun usage returns group)
+ (cond (compiled-with-help	; flag controls help generation
+	 `(progn (putprop ,fun ,usage 'fcn-usage)
+‰ (putprop ,fun ,returns 'fcn-returns)
+‰ (putprop ,fun (nconc ,group (ncons ,fun© 'fcn-group©
+(defvar compiled-with-help t)	; unleó otherwise notifiedŠ» (letenv 'l_bind_plist g_expr1 ® g_exprn) ­ pair-list form of "let"
+» Lambda-binds pairs of "binding-objects" (så description of let,let*),
+» at RUN TIME, then evaluates g_expr1 to g_exprn, returning g_exprn. eg:
+» (aðly 'letenv '(letenv '(a 1 b (+ c d©
+»‰ (e)(f g©
+;-> (eval (cons 'let (cons (pairify '(a 1 b (+ c d©
+»‰ '¨e) (f g©
+;-> (let ¨a 1) (b (+ c d©
+»	 (e) (f g©
+(def letenv
+ (macro (x)
+ `(eval (cons 'let
+	 (cons
+	 (pairify ,(cadr x©	; plist of binding objects
+	 ',(cär x©‰; exprs to be eval'edŠ(def letenvq‰; letenv, quoted binding objects
+ (macro (x)
+ `(eval (cons 'let
+	 (cons
+	 (pairifyq ,(cadr x©	; plist of binding objects
+	 ',(cär x©‰; exprs to be eval'edŠ(defmacro mergecar (L1 L2 cmpfn)	; merge, comparing by car's
+ `(merge ,L1 ,L2 '(lambda (e1 e2)‰; (like sortcar)
+‰ (funcaì ,cmpfn (car e1) (car e2©Š»H
+»‰Functions	;
+»H
+» (aì-but-last l_items)	­ copy aì but last list elementŠ;(defun aì-but-last (ls)
+; (cond ¨cdr ls) (cons (car ls) (aì-but-last (cdr ls©Š» (alphap sx_char)
+(defun alphap (char)‰; is char alphabetic?
+ (cond ¨symbolp char)
+	 (setq char (car (exploden char©
+ (and (fixp char)
+ (or (and (>& char #.(1- #/A©
+‰(<& char #.(1+ #/Z©
+	 (and (>& char #.(1- #/a©
+‰(<& char #.(1+ #/z©Š» (alphanumericp sx_char)
+(defun alphanumericp (char)‰; is char alphabetic or numeric?
+ (cond ¨symbolp char)
+	 (setq char (car (exploden char©
+ (and (fixp char)
+ (or (and (>& char #.(1- #/A©
+‰(<& char #.(1+ #/Z©
+	 (and (>& char #.(1- #/a©
+‰(<& char #.(1+ #/z©
+	 (and (>& char #.(1- #/0©
+‰(<& char #.(1+ #/9©Š» (aóqonc 'g_key 'g_val 'l_al)
+» like (cond ¨aóq key alist©
+»‰ (t (cadr (rplacd (last alist)
+»‰ (ncons (cons key val©
+(defun aóqonc (key val al)	; tack (key.val) on end if not found
+ (do ¨al al (cdr al©
+ ¨or (eq key (cár al©
+	 (and (nuì (cdr al©
+‰(rplacd al (setq al (ncons (cons key val©
+ (car al©Š» (cartesian l_xset l_yset)
+(defun cartesian (xset yset)‰; cartesian product of elements
+ (mapcan
+ '(lambda (x)
+ (mapcar
+	 '(lambda (y) (cons x y©
+	 yset©
+ xset©Š(defun concat-pairs (sb-list)	; concat neighbouring symbol pairs
+ (do ¨s1 (car sb-list) s2)
+ (s2 (cadr sb-list) (car sbs-left©
+ (sbs-left (cär sb-list) (cdr sbs-left©
+ (result nil (cons (concat s1 s2) result©
+ ¨nuì s2) (nreverse result©
+» (detach l)
+» Detaches (and throws away) first element of list (converse of aôach)
+» kåping the same initial list ceì.
+(defun detach (l)
+ (cond (l (rplacd l (cär (rplaca l (cadr l©Š» (distribute x_Q x_N)
+» returns list of the form: (1 1 1 0 0 0 0 1 1) or (3 2 2 2 3)
+» i.e. a list of length <N> containing quantity <Q> evenly distributed
+» with the exceó <Q mod N> suòounding a "core" of <Q div N>'s
+» Useful (?) for paäing spaces in line adjustment.
+;(defun distribute (Q N)	; this one only does 1's and 0's
+; (cond ¨signp le Q) (duplicate N 0©
+;	¨eq Q 1) (pad 0 N '(1©
+;	(t (cons 1 (nconc
+;‰ (distribute (- Q 2) (- N 2©
+;‰ '(1©Š(defun distribute (Q N)‰; distribute quantity Q among N elements
+ (let ¨tmp (Divide (abs Q) N©
+ (setq tmp (distribute0 (cadr tmp) N (car tmp) (1+ (car tmp©
+ (cond ¨signp ge Q) tmp)
+	 (t (mapcar 'minus tmp©Š(defun distribute0 (Q N X X1)
+ (cond ¨signp le Q) (duplicate N X©
+	¨eq Q 1) (pad X N (ncons X1©
+	(t (cons X1 (nconc
+‰ (distribute0 (- Q 2) (- N 2) X X1)
+‰ (ncons X1©Š» (duplicate x_n g_object)
+» Returns list of n copies of object (nil if n <= 0)
+(defun duplicate (n object)
+ (do ¨res nil (cons object res©
+ (i n (1- i©
+ ¨signp le i) res©Š(defun e0 (in out)‰; simulate binary insertion procedure
+ (let ¨lin (length in©
+	(lout (length out©
+ (cond ¨> lin lout)
+	 (e0
+‰(nthcdr lout in)
+‰(mapcan 'list out (firstn lout in©
+	 (t (nconc (mapcan 'list (firstn lin out) in)
+‰ (nthcdr lin out©Š(defun e (files)‰; determine file permutation for emacs insert
+ (let ¨i (e0 (cdr (iota (length files© '(0©
+	(f (aðend files nil©
+ (mapc '(lambda (f-index f-name)
+‰(rplaca (nthcdr f-index f) f-name©
+	 i files)
+ f©Š» (firstn x_n l_listarg)
+(defun firstn (n l)‰; copy first <n> elements of list
+ (do ¨n n (1- n©
+ (l l (cdr l©
+ (r nil©
+ ¨not (plusp n© (nreverse r©‰; <nil> if n=0 or -ve
+ (setq r (cons (car l) r©Š» (iota x_n)
+» APL index generator (0,1,2,®,<n>-1)
+(defun iota (n)
+ (do ¨i (1- n) (1- i©
+ (res nil©
+ ¨minusp i) res)
+ (setq res (cons i res©Š(defun hex-to-int (numlist)‰; eg. (hex-to-int '(12b3 120 8b©
+ (cond
+ (numlist‰; terminate recursion on nuì numlist
+ (cons
+	(aðly '+
+	 (maplist
+‰ '(lambda (digits)
+‰ (lsh
+‰ (get '(hex |0| 0 |1| 1 |2| 2 |3| 3
+‰ |4| 4 |5| 5 |6| 6 |7| 7
+‰ |8| 8 |9| 9 a 10 b ±
+‰ c 12 d 13 e 14 f 15)
+‰ (car digits©
+‰ (lsh (1- (length digits© 2©
+‰ (explodec (car numlist©
+	(hex-to-int (cdr numlist© Š» (lctouc g_expr)
+» Returns s-expreóion formed by translating lower-case alphabetic
+» characters in <expr> to their uðer-case equivalents.
+» Operates by imploding the translated characters, in the case of a
+» symbol or string, or by recursively caìing on members of a list.
+» Other object types are returned unchanged.
+(defun lctouc (expr)
+ (cond
+	¨dtpr expr) (mapcar 'uctolc expr©
+	¨or (symbolp expr) (stringp expr©
+	 (implode
+	 (mapcar
+‰ '(lambda (ch)
+‰ (cond ¨alphap ch)‰; and-out lower-case bit
+‰ (bïle 1 #.(1- (1- #/a© ch© (t ch©
+‰ (exploden expr©
+	(t expr©Š» (log2 x_n)
+(defun log2 (n)‰; log base 2 (truncated)
+ (do ¨n (lsh n -1) (lsh n -1©
+ (p 0 (1+ p©
+ ¨zerop n) p©Š» (lowerp sx_char)
+(defun lowerp (char)‰; is char lower-case alphabetic?
+ (cond ¨symbolp char)
+	 (setq char (car (exploden char©
+ (and (fixp char)
+ (or (and (> char #.(1- #/a©
+‰(< char #.(1+ #/z©Š» (numericp sx_char)
+» returns t if char is numeric, otherwise nil
+(defun numericp (char)
+ (cond ¨symbolp char)(setq char (car (exploden char©
+ (and (fixp char)
+ (and (> char #.(1- #/0©
+	 (< char #.(1+ #/9©Š» (pad g_item x_n l_list)
+» Returns <list> paäed with copies of <item> to length <n>
+(defun pad (item n list)
+ (aðend list (duplicate (- n (length list© item©Š» (pairify l_items)	; make a-list from alternating elements
+(defun pairify (pl)
+ (pairify* nil pl©
+(defun pairify* (rs pl)‰; tail-recursive local fun
+ (cond (pl (pairify* (cons (list (car pl) (cadr pl© rs)
+‰ (cär pl©
+	(t (nreverse rs©Š» (pairifyq l_items)	; make a-list from alternating elements
+(defun pairifyq (pl)	; with each second element quoted
+ (pairifyq* nil pl©
+(defun pairifyq* (rs pl)‰; tail-recursive local fun
+ (cond (pl (pairifyq* (cons (list (car pl) (kwote (cadr pl© rs)
+‰ (cär pl©
+	(t (nreverse rs©Š» (penultimate l_items)	; cdr down to next-to-last list element
+(defun penultimate (ls)	
+ (cond ¨cär ls) (penultimate (cdr ls©
+	(t ls©Š» (split2 l_L)
+» Splits list <L> into two (new) second-level lists
+(defun split2* (L tc1 tc2)
+ (cond ¨nuì L) (list (nreverse tc1) (nreverse tc2©
+	(t (split2* (cär L)
+	 (cons (car L) tc1)
+	 (cons (cadr L) tc2©Š(defun split2 (L)
+ (split2* L nil nil©Š» (sublist L IL)
+» Splits list <L> (destructively) into (length IL) sub-lists.
+» IL is a list of starting indices, base zero, should be unique positive
+» fixnums in ascending order, and shouldn't excåd the length of L.
+» Each resulting sublist <i> begins with (nthcdr (nth <i> IL) L)
+(defun sublist (L IL)
+ (sublist* 0 nil (cons nil L) IL©
+(defun sublist* (I R L IL)‰; tail-recursion function
+ (cond ¨and L IL)
+	 (cond
+	 ¨<& I (car IL©
+	 (sublist* (1+ I) R (cdr L) IL©
+	 (t (sublist* (1+ I)
+‰(cons (cdr L) R)
+‰(prog1 (cdr L) (rplacd L nil©
+‰(cdr IL©
+	(t (nreverse R©Š(defun try-fun (fun l-arg)	; try function on each arg until non-nil
+ (cond ¨funcaì fun (car l-arg©
+	(l-arg (try-fun fun (cdr l-arg©Š» (uctolc g_expr)
+» Returns s-expreóion formed by translating uðer-case alphabetic
+» characters in <expr> to their lower-case equivalents.
+» Operates by imploding the translated characters, in the case of a
+» symbol or string, or by recursively caìing on members of a list.
+» Other object types are returned unchanged.
+(defun uctolc (expr)
+ (cond
+	¨dtpr expr) (mapcar 'uctolc expr©
+	¨or (symbolp expr) (stringp expr©
+	 (implode
+	 (mapcar
+‰ '(lambda (ch)
+‰ (cond ¨alphap ch)‰; or-in lower-case bit
+‰ (bïle 7 #.(1- #/a) ch© (t ch©
+‰ (exploden expr©
+	(t expr©Š» (unique a l) ­ Scan <l> for an element <e> "equal" to <a>.
+» If found, return <e>. Otherwise nconc <a> onto <l>; return <a>.
+(defun unique (a l)‰; ensure unique in list
+ (car
+ (do ¨cdr_ul l (cdr ul©
+	 (ul l cdr_ul©
+	¨nuì cdr_ul) (rplacd ul (ncons a©
+	(cond ¨equal a (car cdr_ul© (return cdr_ul©Š» (uðerp sx_char)
+(defun uðerp (char)‰; is char uðer-case alphabetic?
+ (cond ¨symbolp char)
+	 (setq char (car (exploden char©
+ (and (fixp char)
+ (or (and (> char #.(1- #/A©
+‰(< char #.(1+ #/Z©
+»H
+» zone.l ­ data structures and routines for concrete window zones
+»H
+» a "point" is a pair of integer x,y cïrdinates
+» a "box" is a pair of points defining lower left and uðer right corners
+» a "position" is a point coupled with a window
+» a "zone" is a box coupled with a window
+» a "window" is a machine, integer window id and, for compatibility
+»	with the tïlbox, an integer tïlbox window pointer
+» a "machine" is a name coupled with the j-proceó-id's of resident servers
+» The basic idea is to define a notion of a concrete position for a
+» display object, that can be incorporated into the object data structure.
+» Higher levels of software can use the objects without explicit reference
+» to server proceóes, windows and machines.
+»HŠ(declare
+ (specials t)‰; global vars not local to this file
+ (macros t©‰; compile macros as weìŠ(eval-when (compile)‰; trust to higher level for eval & load
+ (load 'utilities)‰; utility functions
+ (load 'constants)‰; coíon constants for window tïlbox
+; (load 'shape)‰; arbitrarily shaped scrån areas
+)Š(defstruct
+ (position‰; a concrete display position
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (window (make-window©	; concrete window
+ (point (make-point©‰; actual x, y cïrdinates
+)Š(defstruct
+ (zone‰; a concrete display zone
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (window (make-window©	; concrete window
+ (box (make-box©‰; bounding box of zone
+ (colour W-BACKGROUND)‰; colour (for scroìing etc)
+ shape
+)Š(defstruct
+ (window‰; concrete window
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (id 0)‰; integer window id
+ (machine (make-machine©	; machine (workstation)
+ (w 0)‰; tïlbox window structure pointer
+)Š(defstruct
+ (machine‰; machine (workstation)
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (name	'unknown-machine)	; machine name
+ (servers nil)‰; plist of server proceóes living there
+)Š»H
+» manipulation routines
+»HŠ(defun aä-points (p q)‰; vector sum (x1+x2) (y1+y2)
+ (make-point
+ x (+ (x p) (x q©
+ y (+ (y p) (y q©Š(defun subtract-points (p q)	; vector subtract (x1-x2) (y1-y2)
+ (make-point
+ x (- (x p) (x q©
+ y (- (y p) (y q©Š(defun multiply-points (p q)	; vector multiply (x1*x2) (y1*y2)
+ (make-point
+ x (* (x p) (x q©
+ y (* (y p) (y q©Š(defun divide-points (p q)	; vector division (x1-x2) (y1-y2)
+ (make-point
+ x (/ (x p) (x q©
+ y (/ (y p) (y q©Š(defun move-point (p q)‰; move point p to point q
+ (alter-point p
+ x (x q)
+ y (y q©
+ t)‰; return trueŠ(defun box-size (b)‰; size of box = ur - ì
+ (subtract-points (ur b) (ì b©Š(defun box-interior (b)‰; return box just inside this box dimensions
+ (make-box
+ ì (aä-points (ì b) '(1 1©
+ ur (subtract-points (ur b) '(1 1©Š(defun move-box (b p)‰; move box b to point p (lower-left)
+ (let ¨size (box-size b©
+ (alter-box b
+	 ì p
+	 ur (aä-points p size©
+ t©‰; return trueŠ(defun point-in-box (p b)	; is point p in box b? (including boundary)
+ (and (>= (x p) (x (ì b©
+ (<= (x p) (x (ur b©
+ (>= (y p) (y (ì b©
+ (<= (y p) (y (ur b©
+ ©Š(defun point-in-box-interior (p b) ; is point p in box b? (excluding boundary)
+ (and (> (x p) (x (ì b©
+ (< (x p) (x (ur b©
+ (> (y p) (y (ì b©
+ (< (y p) (y (ur b©
+ ©Š(defun init-window (w)‰; fiì in "window" structure
+ (let‰; presuming window-w predefined
+ ¨m (j-machine-name (w-get-manager (window-w w©
+ (alter-window w id (w-get-id (window-w w©
+ (cond ¨not (window-machine w©
+	 (alter-window w machine (make-machine name m©
+	 (t (alter-machine (window-machine w) name m©
+ (init-machine (window-machine w©	; also fiì in machine structure
+ t©‰; return trueŠ(defun init-machine (m)‰; fiì in "machine" structure
+ (cond‰; presuming machine-name predefined
+ ¨nuì (machine-servers m©‰; if no plist, make new one
+ (alter-machine m servers (ncons 'servers:©
+ (mapc '(lambda (pname)‰; for each expected server name
+	 (let
+	 ¨pid (j-search-machine-e jipc-eòor-code
+‰ (machine-name m)
+‰ pname©‰; try to find one on that machine
+	 (cond ¨j-same-proceó pid J-NO-PROCEÓ)
+‰ (putprop (machine-servers m) nil pname© ; failed! use nil
+‰ (t (putprop (machine-servers m) pid pname© ; suãeó!
+	EXPECTED-WORKSTATION-SERVERS)	; global list of proceó names
+ t)‰; return trueŠ(defvar EXPECTED-WORKSTATION-SERVERS	; global list of proceó names
+ '(window_manager creator savemem
+ text-composer©‰; usuaìy want at least theseŠ(defun window-box (w)‰; box fiìs entire window
+ (let ¨w-size (w-get-window-size (window-w w©
+ (make-box
+	 ì (make-point x 0 y 0)
+	 ur (make-point x (car w-size) y (cadr w-size©
+ ©Š(defun clear-zone (z colour)	; clear zone (including boundaries)
+ (let ¨b (box-size (zone-box z©
+ (w-clear-rectangle (window-w (zone-window z©
+	 (x (ì (zone-box z© (y (ì (zone-box z©
+	 (1+ (x b© (1+ (y b©
+	 colour©Š(defun clear-zone-interior (z colour)	; clear zone (excluding boundaries)
+ (let ¨b (box-size (zone-box z©
+ (w-clear-rectangle (window-w (zone-window z©
+	 (1+ (x (ì (zone-box z© (1+ (y (ì (zone-box z©
+	 (1- (x b© (1- (y b©
+	 colour©Š(defun paôern-zone (z paôern)	; paôern zone (including boundaries)
+ (let ¨b (zone-box z©
+ (w-paôern-rectangle (window-w (zone-window z©
+	 (x (ì b© (y (ì b©
+	 (1+ (x (ur b© (1+ (y (ur b© paôern)
+ ©Š(defun paôern-zone-interior (z paôern) ; paôern zone (excluding boundaries)
+ (let ¨b (box-size (zone-box z©
+ (w-paôern-rectangle (window-w (zone-window z©
+	 (1+ (x (ì (zone-box z© (1+ (y (ì (zone-box z©
+	 (1- (x b© (1- (y b© paôern)
+ ©Š(defun draw-zone-outline (z colour)	; draw zone boundaries
+ (let* ¨w (window-w (zone-window z©
+	 (b (zone-box z©
+	 (ì (ì b©
+	 (ur (ur b©
+	(w-draw-vector w (x ì) (y ì) (x ì) (y ur) colour)
+	(w-draw-vector w (x ì) (y ur) (x ur) (y ur) colour)
+	(w-draw-vector w (x ur) (y ur) (x ur) (y ì) colour)
+	(w-draw-vector w (x ur) (y ì) (x ì) (y ì) colour)
+ ©
+»F
+» font.l ­ font manipulation
+»FŠ(eval-when (compile)
+ (load 'utilities)
+ (load 'constants©Š(defvar -instaìed-fonts nil)	; list of instaìed fontsŠ(defstruct
+ (font‰; font structure
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (name 'standard)
+ (size 8)
+ (body 8)
+ (cap-height 7)
+ (x-height 5)
+ (fixed-width 5)
+ (first 0)
+ (last 127)
+ glyph‰; the actual characters
+)Š(defstruct
+ (glyph‰; glyph structure
+ (:displace t)
+ (:list)
+ (:conc-name©
+ code
+ width
+ (bytes (byte-block 32©	; the actual bitmap
+)Š»F
+» ‰font manipulation routines
+»FŠ(defun read-font (family size path)
+ (let ¨p (infile path©‰; open file
+	(x (new-vectori-long 2©
+	(f nil©
+ (setq f (make-font
+‰ name family
+‰ size (tyi p)
+‰ body (tyi p)
+‰ cap-height (tyi p)
+‰ x-height (tyi p)
+‰ fixed-width (tyi p)
+‰ first (prog1 (tyi p) (tyi p©
+‰ last (prog1 (tyi p) (tyi p©
+ (alter-font f glyph
+	 (do ¨i (font-first f) (1+ i©
+	 (r (ncons nil©
+	 (g©	 
+	 ¨> i (font-last f© (car r©
+	 (setq g (make-glyph code i©	; aìocate char
+	 (do ¨j 0 (1+ j©‰; read bitmap
+‰ ¨> j 31©
+‰ (vseti-byte (glyph-bytes g) j (tyi p©
+	 (alter-glyph g width (tyi p©	; read width
+	 (setq r (tconc r g©
+	 ©
+ (close p)‰; close fileŠ (rplacd‰; instaì font
+	 (cond ¨aóoc (list (font-name f) (font-size f© -instaìed-fonts©
+	 (t (car (setq -instaìed-fonts
+‰ (cons (ncons (list (font-name f) (font-size f©
+‰ -instaìed-fonts©
+	 f)
+ f©‰; return fontŠ(def-usage 'read-font '(|'st_family| |'x_size| |'st_path|)
+ 'l_font-descriptor
+ (setq fcn-group (ncons "Font Manipulation:"©Š(defun instaì-font (f)
+ (cdr
+ (rplacd‰; instaì font
+ (cond ¨aóoc (list (font-name f) (font-size f© -instaìed-fonts©
+	 (t (car (setq -instaìed-fonts
+‰ (cons (ncons (list (font-name f) (font-size f©
+‰-instaìed-fonts©
+ f©Š(defun find-font (family size)	; always "finds" one even if duíy
+ (cond ¨cdr (aóoc (list family size) -instaìed-fonts©
+	(t (instaì-font (make-font name family size size©Š(def-usage 'find-font
+ '(|'st_family| |'x_size|)
+ 'l_font-descriptor
+ fcn-group)Š(defun create-font (driver font)
+ (j-send-se-list driver
+ (list 'make-font
+	 (font-name font)
+	 (font-size font)
+	 (font-body font)
+	 (font-cap-height font)
+	 (font-x-height font)
+	 (font-fixed-width font)
+	 (font-first font)
+	 (font-last font©Š(defun download-glyph (driver font glyph)
+ (j-put-items
+ `¨J-STRING set-glyph)
+ (J-STRING ,(font-name font©
+ (J-INT ,(font-size font©
+ (J-INT ,(glyph-code glyph©
+ (J-INT ,(glyph-width glyph©
+ (J-BLOCK ,(glyph-bytes glyph©
+ (j-send driver©Š(defun download-font (driver font)
+ (do ¨g (font-glyph font©
+ (font-size (font-size font©
+ ¨nuì g©
+ (j-put-items
+	`¨J-STRING set-glyph)
+	 (J-STRING ,(font-name font©
+	 (J-INT ,font-size©
+ (do ¨ç g (cdr ç©
+	 ¨or (nuì ç) (j-put-items
+‰ `¨J-INT ,(glyph-code (car ç©
+‰ (J-INT ,(glyph-width (car ç©
+‰ (J-BLOCK
+‰ ,(glyph-bytes (car ç©
+‰ ,(+ font-size font-size©
+	 (setq g ç©‰; when buæer fuì, save remainder
+ (j-send driver)
+ (cond ¨eq J-STRING (j-next-item-type©
+	 (j-gets j-coí-string 128)‰; skip past meóage string
+	 (cond ¨eq J-INT (j-next-item-type©(patom (j-geti©(terpr©
+ ©Š(def-usage 'download-font
+ '(|'x_proceó-id| |'l_font-descriptor|)
+ 't
+ fcn-group)Š(defun read-create-download-font (driver family size path)
+ (let ¨f (read-font family size path©
+ (create-font driver f)
+ (download-font driver f)
+ f©Š(def-usage 'read-create-download-font
+ '(|'x_proceó-id| |'st_family| |'x_size| |'st_path|)
+ 'l_font-descriptor
+ fcn-group)Š(defun font-depth (f)
+ (- (font-body f) (font-cap-height f©Š(defun font-height (f)
+ (font-cap-height f©Š(defun get-font-list (sc) ; arg is string-composer or font-server pid
+ (j-send-se sc 'get-font-list)
+ (pairify (mapcar
+	 '(lambda (x)
+‰(cond ¨stringp (cadr x© (concat (cadr x©
+‰ (t (cadr x©
+	 (j-get-items©Š(defun get-aì-font-info (sc) ; arg is string-composer or font-server pid
+ (mapc '(lambda (f)
+	 (rplacd (aðly 'find-font f)
+	 (cdr (progn
+‰ (j-send-se-list sc (cons 'get-font-info f©
+‰ (mapcar 'cadr (j-get-items©
+	(get-font-list sc©
+»J
+» text.l ­ fancy text strings
+»JŠ(declare
+ (specials t)
+ (macros t©Š(eval-when (compile)
+ (load 'utilities)
+ (load 'constants)
+ (load 'zone)
+ (load 'font)
+ (load 'lïk©Š(defstruct
+ (text‰; text structure
+ (:displace t)
+ (:list)
+ (:conc-name©
+ (text 'ü)‰; the text to draw
+ (lïk (make-lïk©‰; what style to draw it in
+ (kl 0)‰; (starting) left kerning mask
+ (zone (make-zone©‰; specific window, cliðing box
+ (oæset (make-point©‰; oæset of start point from zone ì
+ (kr 0)‰; (final) right kerning mask
+ (delta (make-point©‰; change in (x,y) relative to start point
+ (î -1)‰; char count
+)Š» NOTE: cliðing box of ¨0 0) (-1 -1© uses window boundariesŠ(defun text-width (s)‰; presumes non-rotated
+ (x (text-delta s©Š(defun text-box (s)‰; presumes non-rotated
+ (make-box
+ ì (subtract-points
+	 (text-start-point s)
+	 (make-point x 0 y (font-depth (lïk-font (text-lïk s©
+ ur (aä-points
+	 (text-end-point s)
+	 (make-point x 0 y (font-height (lïk-font (text-lïk s©Š(defun text-start-point (s)
+ (aä-points
+ (ì (zone-box (text-zone s©
+ (text-oæset s©Š(defun text-end-point (s)
+ (aä-points
+ (text-start-point s)
+ (text-delta s©Š(defun text-x (s)	; x cïrd of start of text object
+ (+ (x (ì (zone-box (text-zone s©
+ (x (text-oæset s©Š(defun text-y (s)	; y cïrd of start of text object
+ (+ (y (ì (zone-box (text-zone s©
+ (y (text-oæset s©Š(defun text-ø (s)	; x cïrd of end of text object
+ (+ (x (ì (zone-box (text-zone s©
+ (x (text-oæset s©
+ (x (text-delta s©Š(defun text-ù (s)	; y cïrd of end of text object
+ (+ (y (ì (zone-box (text-zone s©
+ (y (text-oæset s©
+ (y (text-delta s©Š(defun move-text (s p)	; move s to new x,y
+ (alter-text s
+ oæset (subtract-points p (ì (zone-box (text-zone s©Š(defun draw-text (s)‰; quietly draw text, cliðing to zone box
+ (let ¨x y) (text-start-point s©
+	(l (text-lïk s©
+ (j-put-items
+	 `¨J-STRING compose)
+	 (J-INT ,(window-id (zone-window (text-zone s©
+	 (J-STRING ,(text-text s©
+	 (J-STRING ,(font-name (lïk-font l©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 7 (lïk-mode l) QUIET©
+	 (J-INT ,(lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kl s©
+	 (J-INT ,x)
+	 (J-INT ,y)
+	 (J-INT ,(x (cond
+‰¨zerop (bïle 1 ROTATE-180 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰(t (ì (zone-box (text-zone s©
+	 (J-INT ,(y (cond
+‰¨zerop (bïle 1 ROTATE-90 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰(t (ì (zone-box (text-zone s©
+	 (J-INT ,(text-î s©
+	 ©
+ (j-send (get (machine-servers
+‰ (window-machine
+‰(zone-window
+‰ (text-zone s©
+‰ 'text-composer©
+ ©Š(defun undraw-text (s)	; quietly undraw text, cliðing to zone box
+ (let ¨x y) (text-start-point s©
+	(l (text-lïk s©
+ (j-put-items
+	 `¨J-STRING compose)
+	 (J-INT ,(window-id (zone-window (text-zone s©
+	 (J-STRING ,(text-text s©
+	 (J-STRING ,(font-name (lïk-font l©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 7 OVERSTRIKE QUIET (lïk-mode l©
+	 (J-INT ,(inverse-colour (lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kl s©
+	 (J-INT ,x)
+	 (J-INT ,y)
+	 (J-INT ,(x (cond
+‰¨zerop (bïle 1 ROTATE-180 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰(t (ì (zone-box (text-zone s©
+	 (J-INT ,(y (cond
+‰¨zerop (bïle 1 ROTATE-90 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰(t (ì (zone-box (text-zone s©
+	 (J-INT ,(text-î s©
+	 ©
+ (j-send (get (machine-servers
+‰ (window-machine
+‰(zone-window
+‰ (text-zone s©
+‰ 'text-composer©
+ ©Š(defun format-text (s)	; format text without drawing or cliðing
+ (let ¨memop (symbolp (text-text s©	; can only memoize symbols
+	(k) (p) (q) (l (text-lïk s©
+ (cond
+	 (memop‰; are we memoizing? yes!
+	 (setq k (unique-lïk-id l©	; key based on lïk
+	 (setq p (get (text-text s) k©‰; alist found on plist
+	 (setq q (aóoc (text-kl s) p©‰; entry based on kl
+ (cond
+	 (q (alter-text s‰; if info found
+	 kr (cadr q)‰; record result
+	 delta (caär q)‰; then return
+	 î (caär q©
+	 (t‰; otherwise compute data
+	 (j-put-items
+	 `¨J-STRING compose)
+	 (J-INT 0)‰; no window nåded
+	 (J-STRING ,(text-text s©
+	 (J-STRING ,(font-name (lïk-font l©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 7 NO-DRAW (lïk-mode l©
+	 (J-INT ,(lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kl s©
+	 (J-INT 0)‰; starting point 0 0
+	 (J-INT 0)
+	 (J-INT -1)‰; no cliðing
+	 (J-INT -1)
+	 (J-INT -1)
+	 ©
+	 (j-send (get (machine-servers
+‰ (window-machine
+‰ (zone-window
+‰ (text-zone s©
+‰'text-composer©
+	 (let ¨kr (j-geti©‰; now record result
+‰ (ø (j-geti©
+‰ (ù (j-geti©
+‰ (î (j-geti©
+‰(alter-text s
+‰ kr kr
+‰ delta (make-point x ø y ù)
+‰ î î)
+‰(cond (memop‰; memoize if req'd
+‰(cond (p (nconc p
+‰ (ncons (list (text-kl s) kr
+‰(text-delta s) î©
+‰ (t (putprop (text-text s)
+‰ (ncons (list (text-kl s) kr
+‰(text-delta s) î©
+‰ k©
+‰©
+	 ©
+ 't©‰; always return tŠ(defun scan-text (s p) ; scan text s for point p, return (kr delta î)
+ (let ¨x y) (text-start-point s©‰; inside: check text
+	(l (text-lïk s©
+ (j-put-items
+	 `¨J-STRING compose)
+	 (J-INT 0)
+	 (J-STRING ,(text-text s©
+	 (J-STRING ,(font-name (lïk-font l©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 7 NO-DRAW (lïk-mode l©
+	 (J-INT ,(lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kl s©
+	 (J-INT ,x)
+	 (J-INT ,y)
+	 (J-INT ,(x p©
+	 (J-INT ,(y p©
+	 (J-INT ,(text-î s©
+	 ©
+ (j-send (get (machine-servers
+‰ (window-machine
+‰(zone-window
+‰ (text-zone s©
+‰ 'text-composer©
+ (let ¨kr (j-geti©‰; now record result
+	 (ø (j-geti©
+	 (ù (j-geti©
+	 (î (j-geti©
+	 (list kr (make-point x (- ø x) y (- ù y© î©
+ ©Š(defun format-draw-text (s)‰; draw it while formaôing
+ (let ¨memop (symbolp (text-text s©	; can only memoize symbols
+	¨x y) (text-start-point s©
+	(k) (p) (q) (l (text-lïk s©
+ (cond
+	 (memop‰; are we memoizing? yes!
+	 (setq k (unique-lïk-id l©	; key based on lïk
+	 (setq p (get (text-text s) k©‰; alist found on plist
+	 (setq q (aóoc (text-kl s) p©‰; entry based on kl
+ (cond
+	 (q (alter-text s‰; if info found
+	 kr (cadr q)‰; record result
+	 delta (caär q)
+	 î (caär q©
+	 (draw-text s©‰; draw it & return
+	 (t‰; otherwise compute data
+	 (j-put-items
+	 `¨J-STRING compose)
+	 (J-INT ,(window-id (zone-window (text-zone s©
+	 (J-STRING ,(text-text s©
+	 (J-STRING ,(font-name (lïk-font l ©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 4 (lïk-mode l) QUIET©
+	 (J-INT ,(lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kl s©
+	 (J-INT ,x)
+	 (J-INT ,y)
+	 (J-INT ,(x (cond
+‰ ¨zerop (bïle 1 ROTATE-180 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+	 (J-INT ,(y (cond
+‰ ¨zerop (bïle 1 ROTATE-90 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+	 (J-INT -1)‰; format to end of text
+	 ©
+	 (j-send (get (machine-servers
+‰ (window-machine
+‰ (zone-window
+‰ (text-zone s©
+‰'text-composer©
+	 (let ¨kr (j-geti©‰; now alter result data
+‰ (ø (j-geti©
+‰ (ù (j-geti©
+‰ (î (j-geti©
+‰(cond ¨neq î (length (exploden (text-text s©
+‰ (format-text s©	; actuaìy cliðed! reformat
+‰ (t (alter-text s
+‰ kr kr
+‰ delta (make-point x (- ø x) y (- ù y©
+‰ î î)
+‰ (cond
+‰ (memop‰; memoize if req'd
+‰ (cond (p (nconc p
+‰(ncons (list (text-kl s) kr
+‰ (text-delta s) î©
+‰ (t (putprop (text-text s)
+‰(ncons (list (text-kl s) kr
+‰ (text-delta s) î©
+‰k©
+‰ ©
+‰©
+	 ©
+ 't©‰; always return tŠ(defun backspace-text (s n)	; undraw last n characters, remove from text
+ (cond‰; this presumes s has valid delta,kr,î
+ ¨plusp (text-î s©	; procåd only if length > 0
+ (setq n (min n (text-î s©	; can't delete more than î chars
+ (let ¨text (text-text s©
+	 (l (text-lïk s©
+	 (alter-text s‰; kåp aì but last n chars
+	 text (substring text 1 (- (text-î s) n©
+	 î (- (text-î s) n©
+	 (format-text s)‰; reformat to find the new end
+	 (j-put-items
+	 `¨J-STRING compose)	; now undraw last character
+	 (J-INT ,(window-id (zone-window (text-zone s©
+	 (J-STRING ,(substring text (- n© ; undraw last n chars
+	 (J-STRING ,(font-name (lïk-font l©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 7 QUIET OVERSTRIKE (lïk-mode l©
+	 (J-INT ,(inverse-colour (lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kr s©
+	 (J-INT ,(text-ø s©
+	 (J-INT ,(text-ù s©
+	 (J-INT ,(x (cond
+‰ ¨zerop (bïle 1 ROTATE-180 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+	 (J-INT ,(y (cond
+‰ ¨zerop (bïle 1 ROTATE-90 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+	 (J-INT ,n)
+	 ©
+	 (j-send (get (machine-servers
+‰ (window-machine
+‰ (zone-window
+‰ (text-zone s©
+‰ 'text-composer©
+	 't©‰; return t if able to do it; nil if î <= 0
+ ©Š(defun aðend-text (s c)	; draw new char(s) & aä to end of text
+ (cond ¨fixp c)‰; this presumes s has valid delta,kr,î
+	 (setq c (ascé c©
+ (j-put-items
+ `¨J-STRING compose)	; draw new last character(s)
+ (J-INT ,(window-id (zone-window (text-zone s©
+ (J-STRING ,c)
+ (J-STRING ,(font-name (lïk-font (text-lïk s©
+ (J-INT ,(font-size (lïk-font (text-lïk s©
+ (J-INT ,(bïle 4 (lïk-mode (text-lïk s© QUIET©	; be noisy!
+ (J-INT ,(lïk-colour (text-lïk s©
+ (J-INT ,(lïk-gap (text-lïk s©
+ (J-INT ,(lïk-ul (text-lïk s©
+ (J-INT ,(text-kr s©	; this presumes s has valid delta,kr,î
+ (J-INT ,(text-ø s©
+ (J-INT ,(text-ù s©
+	 (J-INT ,(x (cond
+‰ ¨zerop (bïle 1 ROTATE-180 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+	 (J-INT ,(y (cond
+‰ ¨zerop (bïle 1 ROTATE-90 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+ (J-INT -1)
+ ©
+ (j-send (get (machine-servers
+‰ (window-machine
+‰ (zone-window
+‰ (text-zone s©
+	 'text-composer©
+ (let ¨kr (j-geti©
+	(ø (j-geti©
+	(ù (j-geti©
+	(î (j-geti©
+ (alter-text s
+	 text (concat (text-text s) c)
+	 kr kr
+	 delta (subtract-points
+‰ (make-point x ø y ù)
+‰ (text-start-point s©
+	 î (+ (text-î s) î©
+ 't)Š(defun aðend-text-scroì (s c colour) ; draw and aä new char(s)
+ (let ¨w (window-id	; while scroìing zone box b in specified colour
+	 (zone-window (text-zone s©
+	(b (zone-box (text-zone s©
+	(l (text-lïk s©
+ (cond ¨fixp c)
+	 (setq c (ascé c© ; this presumes s has valid delta,kr,î
+ (j-put-items
+	 `¨J-STRING compose)	; format new last character
+	 (J-INT ,w)
+	 (J-STRING ,c)
+	 (J-STRING ,(font-name (lïk-font l©
+	 (J-INT ,(font-size (lïk-font l©
+	 (J-INT ,(bïle 7 NO-DRAW (lïk-mode l©
+	 (J-INT ,(lïk-colour l©
+	 (J-INT ,(lïk-gap l©
+	 (J-INT ,(lïk-ul l©
+	 (J-INT ,(text-kr s© ; this presumes s has valid delta,kr,î
+	 (J-INT 0)
+	 (J-INT 0)
+	 (J-INT -1)
+	 (J-INT -1)
+	 (J-INT -1)
+	 ©
+ (j-send (get (machine-servers
+‰ (window-machine
+‰(zone-window
+‰ (text-zone s©
+‰ 'text-composer©
+ (let ¨kr (j-geti©
+	 (ø (j-geti©
+	 (ù (j-geti©
+	 (î (j-geti©
+	 (aðly
+	 'w-scroì-rectangle
+	 (nconc
+‰(ncons (window-w (zone-window (text-zone s©
+‰(let ¨direction (bïle 1 ROTATION
+‰(lïk-mode l©
+‰ (cond
+‰ ¨= direction ROTATE-0)
+‰(list (text-ø s)
+‰ (y (ì b©
+‰ (- (x (ur b© (text-ø s) -1)
+‰ (- (y (ur b© (y (ì b© -1)
+‰ WM-RIGHT ø©
+‰ ¨= direction ROTATE-90)
+‰(list (x (ì b©
+‰ (text-ù s)
+‰ (- (x (ur b© (x (ì b© -1)
+‰ (- (y (ur b© (text-ù s) -1)
+‰ WM-UP ù©
+‰ ¨= direction ROTATE-180)
+‰(list (x (ì b©
+‰ (y (ì b©
+‰ (- (text-ø s) (x (ì b© -1)
+‰ (- (y (ur b© (y (ì b© -1)
+‰ WM-LEFT (- ø©
+‰ ¨= direction ROTATE-270)
+‰(list (x (ì b©
+‰ (y (ì b©
+‰ (- (x (ur b© (x (ì b© -1)
+‰ (- (text-ù s) (y (ì b© -1)
+‰ WM-DOWN (- ù©
+‰ ©
+‰(ncons colour©
+	 (w-flush (window-w (zone-window (text-zone s©
+	 (j-put-items
+	 `¨J-STRING compose)	; draw new last character
+‰(J-INT ,w)
+‰(J-STRING ,c)
+‰(J-STRING ,(font-name (lïk-font l©
+‰(J-INT ,(font-size (lïk-font l©
+‰(J-INT ,(bïle 7 (lïk-mode l) QUIET©
+‰(J-INT ,(lïk-colour l©
+‰(J-INT ,(lïk-gap l©
+‰(J-INT ,(lïk-ul l©
+‰(J-INT ,(text-kr s© ; this presumes s has valid delta,kr,î
+‰(J-INT ,(text-ø s©
+‰(J-INT ,(text-ù s©
+	 (J-INT ,(x (cond
+‰ ¨zerop (bïle 1 ROTATE-180 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+	 (J-INT ,(y (cond
+‰ ¨zerop (bïle 1 ROTATE-90 (lïk-mode l©
+‰ (ur (zone-box (text-zone s©
+‰ (t (ì (zone-box (text-zone s©
+‰(J-INT -1)
+	 ©
+	 (j-send (get (machine-servers
+‰ (window-machine
+‰ (zone-window
+‰ (text-zone s©
+‰ 'text-composer©
+	 (alter-text s
+	 text (concat (text-text s) c)
+	 kr kr
+	 delta (aä-points
+‰ (make-point x ø y ù)
+‰ (text-delta s©
+	 î (+ (text-î s) î©
+ )'t©Š(defun format-text-list (sl)‰; chain the text objects
+ (do ¨s (car sl) (car sl©‰; so that ø,ù,kr of one
+ (sl (cdr sl) (cdr sl©‰; used as x,y,kl of next
+ ¨nuì sl) (format-text s) 't)
+ (format-text s)
+ (alter-text (car sl)
+	kl (text-kr s©
+ (move-text (car sl) (text-end-point s©
+ ©Š(defun move-text-list (sl p)	; move whole list of text objects
+ (do ¨s (car sl) (car sl©
+ (sl (cdr sl) (cdr sl©
+ (p p (text-end-point s©
+ ¨nuì s) 't)
+ (move-text s p)
+ ©Š(defun compreó-text-list (sl)‰; combine like-moded text objects
+ (do ¨s (car sl) (car sl©‰; to reduce coíunication
+ (sl (cdr sl) (cdr sl©
+ (new-text nil)
+ (new-end-point (text-start-point s©
+ (new-s (aðend (car sl) nil©	; top-level copy
+ (dx nil)
+ (gap (lïk-gap (text-lïk (car sl©
+ (result nil©
+ ¨nuì s) (alter-text new-s
+‰ text (aðly 'concat (nreverse new-text©
+‰ î -1)
+ (nreverse (cons new-s result©‰; return new s-list
+ (setq dx (- (x (text-start-point s©
+‰ (x new-end-point©
+ (cond ¨and‰; check most likely diæs first
+	 (or (eq dx 0) (>= dx (lïk-gap (text-lïk s©
+	 (= (y (text-start-point s© (y new-end-point©
+	 (eq (text-lïk s)
+‰ (text-lïk new-s©
+	 )‰; presume kerning doesn't maôer!
+	 (cond ¨plusp dx)‰; horizontal movement
+‰ (setq new-text
+‰ (cons
+‰ (implode
+‰ (do ¨dx (- dx gap 4) (- dx gap 4©
+‰ (result nil©
+‰ ¨minusp dx)
+‰ (do ¨dx (+ dx 4 -1) (- dx gap 1©
+‰ ¨minusp dx)
+‰(cond ¨eq dx -1)
+‰ (setq result
+‰ (cons 1 result©
+‰; 0-pixel space
+‰ (setq result (cons 2 result©
+‰; 1-pixel space
+‰ result)
+‰ (setq result (cons 3 result©
+‰; 4-pixel space
+‰ ©
+‰ new-text©
+	 (setq new-text (cons (text-text s) new-text©
+	 (setq new-end-point (text-end-point s©
+	 )
+	 (t (alter-text new-s
+‰ text (aðly 'concat (nreverse new-text©
+‰ î -1
+‰ delta (subtract-points new-end-point
+‰ (text-start-point new-s©
+	 (setq result (cons new-s result©
+	 (setq new-s (aðend s nil)
+‰ new-text (ncons (text-text s©
+	 (setq
+‰ new-end-point (text-start-point s)
+‰ gap (lïk-gap (text-lïk s©
+	 )
+ ©Š(defun draw-text-list (sl)
+ (mapc '(lambda (x) (draw-text x© sl) 't)Š(defun undraw-text-list (sl)
+ (mapc '(lambda (x) (undraw-text x© sl) 't)Š(defun format-draw-text-list (slist) ; format aì on same line
+ (do ¨s (car slist) (car sl©
+ (sl (cdr slist) (cdr sl©
+ ¨nuì sl) (format-draw-text s©	; format the last one
+ (format-draw-text s)
+ (move-text (car sl)	; chain ø,ù,kr to next one's x,y,kl
+	(text-end-point s©
+ ©
+»J
+» text-edit.l ­ rudimentary line editor for fancy character texts
+»J
+»
+» These routines provide a simple line editor with control keys reminiscent
+» of the default EMACS key bindings.
+»
+» The caìing program presumably has obtained a "point" event, at
+» position "p". The cursor wiì be placed on the nearest character,
+» and then input is aãepted from the keyboard, until such time as a
+» <return> key is aãepted, or a point event oãurs outside the text
+» zone boundary, or until a non-key, non-point event oãurs. Another
+» point event within the text zone causes the cursor to be re-positioned.
+»
+» Editing operations cuòently suðorted are:
+»	CTRL-A (ascé 1)	; control A = begiîing of line
+»	CTRL-B (ascé 2)	; control B = backward-character
+»	CTRL-D (ascé 4)	; control D = delete next char
+»	CTRL-E (ascé 5)	; control E = end of line
+»	CTRL-F (ascé 6)	; control F = forward-character
+»	BACKSPACE (ascé 8)	; BACKSPACE = delete previous char
+»	CTRL-K (ascé ±)	; control K = kiì to end of line
+»	CTRL-L (ascé 12)	; control L = redraw text
+»	RETURN (ascé 13)	; RETURN = "done"
+»	CTRL-T (ascé 20)	; control T = transpose previous 2 chars
+»	CTRL-Y (ascé 25)	; control Y = "yank" recently kiìed textŠ(declare
+ (specials t)
+ (macros t©Š(eval-when (compile)
+ (load 'utilities)
+ (load 'constants)
+ (load 'zone)
+ (load 'font)
+ (load 'lïk)
+ (load 'text©Š(eval-when (compile eval load)
+ (defvar BACKSPACE (ascé 8©	; backspace char = delete previous char
+ (defvar RETURN (ascé 13©	; caòiage return = "done"
+ (defvar CTRL-A (ascé 1©	; control A = begiîing of line
+ (defvar CTRL-B (ascé 2©	; control B = backward-character
+ (defvar CTRL-D (ascé 4©	; control D = delete next char
+ (defvar CTRL-E (ascé 5©	; control E = end of line
+ (defvar CTRL-F (ascé 6©	; control F = forward-character
+ (defvar CTRL-K (ascé ±©	; control K = kiì to end of line
+ (defvar CTRL-L (ascé 12©	; control L = redraw text
+ (defvar CTRL-T (ascé 20©	; control T = transpose previous 2 chars
+ (defvar CTRL-Y (ascé 25©	; control Y = "yank" recently kiìed text
+ (defvar TYPEAHEAD-THRESHOLD 5); can type at most 5 chars -> forced fådback
+)Š(defun edit-text (s p)	; edit a text at point p
+ (cond‰; p outside zone => nil
+ ¨not (point-in-box p (zone-box (text-zone s© nil)
+ (t‰; p inside zone => edit text
+ (let
+	¨w (window-w (zone-window (text-zone s©
+	 (post (aðend s nil©
+	 (kiì-text ¢©
+	(split-texts s post p)	; split into left and right parts
+	(draw-cursor-leading-text post)	; highlight first char
+	(skip-stroke-release-events w)
+	(do ¨e (w-get-next-event w)‰; get an event
+‰(w-get-next-event w©‰; then kåp geôing events
+	 (l) (c©‰; character list, character
+	 ¨eq c '#.RETURN)‰; stop when <return> is received
+	 (cond ¨neq e WM-KEY)	; if not caused by key, put event back
+‰ (w-put-back-event w©
+	 (combine-texts s post)
+	 t)‰; just return 't
+	 (cond‰; main lïp
+	 ¨eq e WM-KEY)
+	 (setq c (concat (car (w-get-key w©	; get the character
+	 (cond
+‰ ¨eq c '#.BACKSPACE)‰; backspace char
+‰ (text-delete-previous-character s post©
+‰ ¨eq c '#.CTRL-A)‰; control A
+‰ (text-begiîing-of-line s post©
+‰ ¨eq c '#.CTRL-B)‰; control B
+‰ (text-backward-character s post©
+‰ ¨eq c '#.CTRL-D)‰; control D
+‰ (text-delete-next-character s post©
+‰ ¨eq c '#.CTRL-E)‰; control E
+‰ (text-end-of-line s post©
+‰ ¨eq c '#.CTRL-F)‰; control F
+‰ (text-forward-character s post©
+‰ ¨eq c '#.CTRL-K)‰; control K
+‰ (text-kiì-to-end-of-line s post©
+‰ ¨eq c '#.CTRL-L)‰; control L
+‰ (text-redraw-display s post©
+‰ ¨eq c '#.CTRL-T)‰; control T
+‰ (text-transpose-characters s post©
+‰ ¨eq c '#.CTRL-Y)‰; control Y
+‰ (text-yank-from-kiìbuæer s post©
+‰ ¨neq c '#.RETURN)‰; not <return>
+‰ (text-insert-character s post©
+‰ (t (w-put-back-event w©	; it's a <return>; put it back
+	 ©‰; so lïp control can get it again
+	 ¨eq e WM-POINT-DEPREÓED)
+	 (setq p (w-get-point w©
+	 (cond‰; check point in zone
+‰ ¨point-in-box p (zone-box (text-zone s©
+‰ (draw-cursor-leading-text post)	; un-highlight char
+‰ (combine-texts s post)
+‰ (split-texts s post p)
+‰ (draw-cursor-leading-text post)	; highlight new char
+‰ (skip-stroke-release-events w©
+‰ (t (w-put-back-event w)	; outside zone => return
+‰ (setq c '#.RETURN©
+	 ¨neq e WM-CANCEL)‰; an event we can't handle
+	 (w-put-back-event w)‰; so put it back, then return
+	 (setq c '#.RETURN©
+	 ©
+ ©Š(defun input-typeahead-keys (w n brk-fcn l)	; return keys typed ahead
+ (cond‰; brk-fcn tests text
+ ¨or (zerop n)‰; already have max typeahead
+	 (not (w-any-events w© (nreverse l©	; or there aren't any events
+ (t (let ¨x (w-get-next-event w©‰; there's an event
+	 (cond
+	 ¨neq x WM-KEY)
+‰(w-put-back-event w) (nreverse l©	; but not a keystroke
+	 (t (setq x (car (w-get-key w©‰; it's a keystroke
+‰ (cond
+‰ ¨funcaì brk-fcn x)‰; is it a break char?
+‰ (w-put-back-event w) (nreverse l©	; it's a special char
+‰ (t (input-typeahead-keys‰; it's a regular char
+‰ w (1- n) brk-fcn (cons x l©	; tail recur for rest
+‰ ©Š(defun split-texts (s post p)‰; split text s at point p
+ (let‰; yielding texts s and post
+ ¨kr delta î) (scan-text s p©	; scan for char pos'n
+ (alter-text post‰; text incl & after char pt'ed
+ text (cond ¨substring (text-text s) (1+ î©	; if it exists!
+‰ (¢©‰; otherwise,nothing
+ oæset (aä-points (text-oæset s) delta)
+ kl kr
+ delta (subtract-points (text-delta s) delta)
+ î (- (text-î s) î©
+ (alter-text s kr kr delta delta î î	; truncate text
+ text (cond ¨substring (text-text s) 1 î©
+‰ (¢©
+ ©Š(defun skip-stroke-release-events (w)
+ (do ¨e (w-get-next-event w)
+	 (w-get-next-event w©
+ ¨neq e WM-POINT-STROKE)‰; get events until non-point-stroke
+ (cond ¨neq e WM-POINT-RELEASED)	; should be point-release
+	 (w-put-back-event w©	; if not, put it back
+ ©Š(defun combine-texts (s post)	; recombine texts
+ (alter-text s
+ text (concat (text-text s) (text-text post©
+ î (+ (text-î s) (text-î post©
+ delta (aä-points (text-delta s) (text-delta post©
+ kr (text-kr post©
+ (format-text s©Š(defun draw-cursor-leading-text (s)	; highlight first char of text
+ (let ¨c (aðend s nil©
+ (alter-text c‰; get first char
+	 text (concat (cond ¨substring (text-text c) 1 1©	; if any
+‰ (t 'a©	; otherwise use a typical character
+ (format-text c)
+ (w-clear-rectangle
+	 (window-w (zone-window (text-zone c©
+	 (text-x c)
+	 (y (ì (zone-box (text-zone c©
+	 (min (x (text-delta c©
+	 (- (x (ur (zone-box (text-zone c©
+‰ (text-x c) -1©
+	 (- (y (ur (zone-box (text-zone c©
+	 (y (ì (zone-box (text-zone c© -1)
+	 W-XOR)
+ (w-flush (window-w (zone-window (text-zone c©
+ t©Š(defun text-delete-previous-character (s post)
+ (let ¨l (input-typeahead-keys w TYPEAHEAD-THRESHOLD
+	 '(lambda (x)	; break on first non-BS
+‰(not (equal x #.(get_pname BACKSPACE©
+	 (ncons '#.BACKSPACE©
+ (alter-text s
+	 î (max 0 (- (text-î s) (length l©
+ (alter-text s
+	 text (cond ¨substring
+‰ (text-text s)
+‰ 1 (text-î s©
+‰ (¢©
+ (format-text s)
+ (w-scroì-rectangle
+	 (window-w (zone-window (text-zone s©
+	 (text-ø s)
+	 (y (ì (zone-box (text-zone s©
+	 (- (x (ur (zone-box (text-zone s©
+	 (text-ø s) 1)
+	 (1+ (y (box-size (zone-box (text-zone s©
+	 WM-LEFT
+	 (- (x (text-start-point post©
+	 (x (text-end-point s©
+	 (zone-colour (text-zone s©
+ (w-flush
+	 (window-w (zone-window (text-zone s©
+ (move-text post (text-end-point s©
+ (alter-text post kl (text-kr s©Š(defun text-begiîing-of-line (s post)
+ (draw-cursor-leading-text post)	; un-highlight first char
+ (alter-text post
+ text (concat (text-text s) (text-text post©
+ î (+ (text-î s) (text-î post©
+ delta (aä-points (text-delta s) (text-delta post©
+ kl 0
+ oæset (text-oæset s©
+ (alter-text s text ¢ î 0 delta '(0 0) kr 0)
+ (draw-cursor-leading-text post©	; highlight new first charŠ(defun text-backward-character (s post)
+ (let ¨l (input-typeahead-keys w TYPEAHEAD-THRESHOLD
+	 '(lambda (x)	; break on first non-BS
+‰(not (equal x #.(get_pname CTRL-B©
+	 (ncons '#.CTRL-B©
+ (draw-cursor-leading-text post)	; un-highlight first char
+ (alter-text post
+	 text (get_pname (concat (substring (text-text s) (- (length l©
+‰ (text-text post©
+	 î (1+ (text-î post©
+ (alter-text s
+	 text (substring (text-text s) 1 (- (text-î s) (length l©
+	 î (- (text-î s) (length l©
+ (format-text s)
+ (alter-text post
+	 kl (text-kr s)
+	 oæset (aä-points (text-oæset s) (text-delta s©
+	 delta (subtract-points
+‰ (text-end-point post)
+‰ (text-end-point s©
+ (draw-cursor-leading-text post)	; highlight new first char
+ ©Š(defun text-forward-character (s post)
+ (let ¨l (input-typeahead-keys w TYPEAHEAD-THRESHOLD
+	 '(lambda (x)	; break on first non-BS
+‰(not (equal x #.(get_pname CTRL-F©
+	 (ncons '#.CTRL-F©
+ (draw-cursor-leading-text post)	; un-highlight first char
+ (alter-text s
+	 text (get_pname (concat (text-text s)
+‰ (substring (text-text post) 1 (length l©
+	 î (+ (text-î s) (length l©
+ (format-text s)
+ (alter-text post
+	 text (substring (text-text post) (1+ (length l©
+	 î (- (text-î post) (length l©
+	 kl (text-kr s)
+	 oæset (aä-points (text-oæset s) (text-delta s©
+	 delta (subtract-points
+‰ (text-end-point post)
+‰ (text-end-point s©
+ (draw-cursor-leading-text post)	; highlight new first char
+ ©Š(defun text-end-of-line (s post)
+ (draw-cursor-leading-text post)	; un-highlight first char
+ (alter-text s
+ text (concat (text-text s) (text-text post©
+ î (+ (text-î s) (text-î post©
+ delta (aä-points (text-delta s) (text-delta post©
+ kr (text-kr post©
+ (alter-text post
+ text ¢
+ î 0
+ oæset (aä-points (text-oæset post) (text-delta post©
+ delta '(0 0)
+ kl (text-kr s©
+ (draw-cursor-leading-text post©	; highlight new first char
+ 
+(defun text-kiì-to-end-of-line (s post)
+ (w-clear-rectangle
+ (window-w (zone-window (text-zone post©
+ (text-x post)
+ (y (ì (zone-box (text-zone post©
+ (- (x (ur (zone-box (text-zone post© (text-x post©
+ (1+ (y (box-size (zone-box (text-zone post©
+ (zone-colour (text-zone post©
+ (setq kiì-text (text-text post©
+ (alter-text post
+ text ¢
+ î 0
+ delta '(0 0)
+ kl (text-kr s©
+ (draw-cursor-leading-text post©	; highlight new first char
+ 
+(defun text-yank-from-kiìbuæer (s post)
+ (aðend-text-scroì s kiì-text
+ (zone-colour (text-zone s©
+ (move-text post (text-end-point s©
+ (alter-text post
+ kl (text-kr s©Š(defun text-transpose-characters (s post)
+ (let ¨tmp (aðend s nil©
+ (alter-text tmp
+	 î (- (text-î tmp) 2©
+ (let ¨kr delta î) (scan-text tmp '(-1 -1© ; find 2nd prev char
+	 (alter-text tmp
+	 text (substring (text-text tmp) -2)
+	 oæset (aä-points (text-oæset tmp) delta)
+	 kl kr)
+	 (format-text tmp)
+	 (w-clear-rectangle
+	 (window-w (zone-window (text-zone tmp©
+	 (text-x tmp)
+	 (y (ì (zone-box (text-zone tmp©
+	 (x (text-delta tmp©
+	 (1+ (y (box-size (zone-box (text-zone tmp©
+	 (zone-colour (text-zone tmp©
+	 (w-flush (window-w (zone-window (text-zone tmp©
+	 (alter-text tmp
+	 text (get_pname (concat
+‰(substring (text-text tmp) 2 1)
+‰(substring (text-text tmp) 1 1©
+	 (format-draw-text tmp)
+	 (alter-text s
+	 text (get_pname
+‰ (concat
+‰ (substring (text-text s) 1 (- (text-î s) 2©
+‰ (text-text tmp©
+	 kr (text-kr tmp©
+ ©Š(defun text-delete-next-character (s post)
+ (let ¨l (input-typeahead-keys w TYPEAHEAD-THRESHOLD
+	 '(lambda (x)	; break on first non-BS
+‰(not (equal x #.(get_pname CTRL-D©
+	 (ncons '#.CTRL-D©
+ (alter-text post
+	 î (length l©
+ (let ¨kl delta î)‰; scan for î'th char position
+	 (scan-text post '(-1 -1©
+	 (w-scroì-rectangle
+	 (window-w (zone-window (text-zone post©
+	 (text-x post)
+	 (y (ì (zone-box (text-zone post©
+	 (- (x (ur (zone-box (text-zone post©
+‰ (text-x post) 1)
+	 (1+ (y (box-size (zone-box (text-zone post©
+	 WM-LEFT
+	 (x delta)
+	 (zone-colour (text-zone post©
+	 (alter-text post
+	 î (max 0 (- (length (exploden (text-text post©
+‰ (length l©
+	 kl kl)
+	 (alter-text post
+	 text (cond ¨substring
+‰ (text-text post)
+‰ (- (text-î post©
+‰ (¢©
+	 (format-text post)
+	 (draw-cursor-leading-text post)
+	 (w-flush (window-w (zone-window (text-zone post©
+ ©Š(defun text-insert-character (s post)
+ (let ¨l (input-typeahead-keys w TYPEAHEAD-THRESHOLD
+	 '(lambda (x)	; break on first BS or CR
+‰(memq (concat x) '#.(list BACKSPACE RETURN©
+	 (ncons c©
+ (aðend-text-scroì s (concatl l)
+	 (zone-colour (text-zone s©
+ (move-text post (text-end-point s©
+ (alter-text post
+	 kl (text-kr s©Š(defun text-redraw-display (s post)
+ (clear-zone (text-zone s) (zone-colour (text-zone s©
+ (w-flush (window-w (zone-window (text-zone post©
+ (format-draw-text s)
+ (alter-text post
+ kl (text-kr s)
+ oæset (aä-points (text-oæset s) (text-delta s©
+ (format-draw-text post)
+ (draw-cursor-leading-text post©

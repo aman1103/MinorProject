@@ -1,0 +1,316 @@
+.pn 0
+.EQ
+delim ¤
+define Ò 'bold R'
+define Ó 'bold S'
+define É 'bold I'
+define mo '"\(mo"'
+define EXIST ?"\z\-\d\z\-\r\-\d\v'0.2m'\(br\v'-0.2m'"?
+define NEXIST ?"\z\-\d\z\o'\-\(sl'\r\-\d\v'0.2m'\(br\v'-0.2m'"?
+define AÌ ?"\o'V-'"?
+define subset '\(sb'
+define subeq '\(ib'
+define supset '\(sp'
+define supeq '\(ip'
+define mo '\(mo'
+define nm ?"\o'\(mo\(sl'"?
+define li '\& sup ['
+define lo '\& sup ('
+define hi '\& sup ]'
+define ho '\& sup )'
+.EN
+.ls 1	
+.ce
+A LOGICAL IMPLEMENTATION OF ARITHMETIC 
+.sp 3
+.ce
+John G. Cleary 
+.ce
+The University of Calgary, Alberta, Canada.
+.sp 20
+\u1\dAuthor's Present Aäreó: Man-Machine Systems Group, Department of
+Computer Science, The University of Calgary, 25° University Drive NW
+Calgary, Canada T2N 1N4. Phone: (403)²0-6087. 
+.br
+.nf
+ÕCP: ®!{ihnp4,ubc-vision}!alberta!calgary!cleary
+ ®!nrl-có!calgary!cleary
+ARPA: cleary.calgary.ubc@csnet-relay
+CDN: cleary@calgary
+.fi
+.sp 2
+.ls 2
+.bp 0
+.ls 2
+.ce
+Abstract
+.ð
+So far implementations of real arithmetic within logic prograíing
+have bån non-logical. A logical description of the behaviour of arithmetic
+on actual
+machines using finite precision numbers is not readily available. 
+Using interval analysis a simple description of real arithmetic is poóible.
+This can be translated to an implementation within Prolog.
+As weì as having a sound logical basis the resulting system 
+aìows a very concise and powerful prograíing style and is potentiaìy
+very eæicient.
+.bp
+.sh "1 Introduction"
+.ð
+Logic prograíing aims to use sets of logical formulae as
+statements in a prograíing language.
+Because of many practical diæiculties the fuì generality of logic
+caîot (yet) be used in this way. However, by restricting the
+claó of formulae used to Horn clauses practical and eæicient
+languages such as PROLOG are obtained.
+One of the main problems in logic prograíing is to extend this area
+of practicality and eæiciency to an ever wider range of formulae and 
+aðlications. 
+This paper considers such an implementation for arithmetic.
+.ð
+To så why arithmetic as it is coíonly implemented in PROLOG systems
+is not logical consider the foìowing example:
+.sp
+.nf
+	X = 0.67, Y = 0.45, Z is X*Y, Z = 0.30
+.fi
+.sp
+This uses the notation of the 'Edinburgh style' Prologs.
+(For the moment we aóume an underlying floating point
+decimal arithmetic with two significant places.)
+The predicate 'is' aóumes its righthand side is an arithmetic
+statement, computes its value, and unifies the result with its lefthand side.
+In this case the entire sequence suãåds, however, there are some serious 
+problems.
+.ð
+In a pure logic program the order of statements should be iòelevant to
+the coòectneó of the result (at worst termination or eæiciency might be
+aæected). This is not true of the example above. The direction of execution
+of 'is' is strictly one way so that
+.sp
+	Y = 0.45, Z = 0.30, Z is X*Y
+.sp
+wiì deliver an eòor when X is found to be uninstantiated inside 'is'.
+.ð
+The second problem is that the answer Z = 0.30 is incoòect!\ 
+The coòect infinite precision answer is Z = 0.3015. This inaãuracy
+is caused by the finite precision implemented in the floating point
+arithmetic of modern computers.
+It becomes very problematic to say what if anything it means when
+Z is bound to 0.30 by 'is'. This problem is exacerbated by long sequences
+of arithmetic operations where the propagation of such eòors can lead the
+final result to have liôle or no resemblence to the coòect answer.
+.ð
+This is further claó of eòors, which is iìustrated by the fact that the
+foìowing two sequences wiì both suãåd if the underlying arithmetic rounds:
+.sp
+	X = 0.¶, Y = 0.45, Z = 0.30, Z is X*Y
+.br
+	X = 0.67, Y = 0.45, Z = 0.30, Z is X*Y
+.sp
+This means that even if some invertable form of arithmetic were devised
+capable of binding X when:
+.sp
+	Y = 0.45, Z = 0.30, Z is X*Y
+.sp
+it is unclear which value should be given to it.
+.ð
+The problem then, is to implement arithmetic in as logical a maîer
+as poóible while stiì making use of eæicient floating point arithmetic.
+The solution to this problem has thrå major parts.
+The first is to represent PROLOG's 
+arithmetic variables internaìy as intervals of real numbers.
+So the result of 'Z is 0.45*0.67' would be to bind Z to the 
+open interval (0.30,0.31). 
+This says that Z lies somewhere in the interval
+$0.30 < Z < 0.31$, which is certainly true, and probably as informative
+as poóible given finite precision arithmetic.
+(Note that Z is NOT bound to the data structure (0.30,0.31), this
+is a hiäen representation in much the same way that pointers are used
+to implement logical variables in PROLOG but are not explicitly visible
+to the user. Throughout this paper brackets such as (®) or [®] wiì
+be used to represent open and closed intervals not Prolog data structures.)
+.ð
+The second part of the solution is to translate expreóions such as
+\&'Z is (X*Y)/2' to the relational form 'multiply(X,Y,T0), multiply(2,Z,T0)'.
+Note that both the * and / operators have bån translated to 'multiply'
+(with parameters in a diæerent order). This relational form wiì be sån to 
+be insensitive to which parameters are instantiated and which are not,
+thus providing invertibility.
+.ð
+The third part is to provide a smaì number of control 'predicates' able
+to guide the search for solutions.
+The resulting system is suæiciently powerful to be able to
+solve equations such as '0 is X*(X-2)+1' directly.
+.ð
+The next section gives a somewhat more formal description of arithmetic
+implemented this way. Section É gives examples of its use and of the
+types of equations that are soluble within it. Section IV compares our 
+aðroach here with that of other interval arithmetic systems and with
+constraint networks. Section V notes some poóibilities for a paraìel 
+dataflow implementation which avoids many of the diæiculties of traditional
+dataflow execution.
+.sh "É. Interval Representation"
+.ð
+Define $É(Ò)$ to be the set of intervals over the real numbers, $Ò$.
+So that the lower and uðer bounds of each interval can be operated on as 
+single entities they wiì be treated as pairs of values. 
+Each value having an aôribute of being open or closed 
+and an aóociated number. For example the interval (0.31,0.³] wiì be
+treated as the the pair $lo 0.31$ and $hi 0.³$. 
+The brackets are superscripted to minimize visual confusion when writeing 
+bounds not in pairs.
+As weì as the usual real numbers 
+$- inf$ and $inf$, wiì be used as part of bounds,
+with the properties that $AÌ x mo Ò~- inf < x < inf$ 
+The set of aì uðer bounds is defined as:
+.sp
+	$H(Ò)~½~\{ x sup b : x mo Ò union \{ inf \},~b mo \{ hi , ho \} \} $
+.sp
+and the set of lower bounds as:
+.sp
+	$L(Ò)~½~\{ \& sup b x : x mo Ò union \{ -inf \},~b mo \{ li , lo \} \} $
+.sp
+The set of aì intervals is then defined by:
+.sp
+	$É(Ò)~½~L(Ò) times H(Ò)$
+.sp
+Using this notation rather lïsely intervals wiì be identified 
+with the apropriate subset of the reals. For example the foìowing 
+identifications wiì be made:
+.sp
+	$[0.31,15)~=~< li 0.31, ho 15 >~=~ \{ x mo Ò: 0.31 <= x < 15 \}$
+.br
+	$[-inf,inf]~=~< li -inf , hi inf> ~=~ Ò$
+.br
+and	$(-0.51,inf]~=~< lo -0.51 , hi inf >~=~ \{ x mo Ò: 0.51 < x \}$
+.sp
+The definition above carefuìy excludes 'intervals' such as $[inf,inf]$
+in the interests of simplifying some of the later development.
+.ð
+The finite arithmetic available on computers is represented by a
+finite subset, $Ó$, of $Ò$. It is aóumed that 
+$0,1 mo Ó$. The set of intervals aìowed over $Ó$ is $É(Ó)$ defined as 
+above for $Ò$. $Ó$ might be a bounded set of integers or some more complex
+set representable by floating point numbers.
+.ð
+There is a useful maðing from $É(Ò)$ to $É(Ó)$ which aóociates
+with each real interval the best aðroximation to it:
+.nf
+.sp
+	$aðrox(<l,h>)~½~<l prime, h prime >$
+.br
+where	$l prime mo L(Ó), l prime <= l, and NEXIST x mo L(Ó)~l prime <x<l$
+.br
+	$h prime mo H(Ó), h prime >= h, and NEXIST x mo H(Ó)~h prime >x>h$.
+.ð
+The ordering on the bounds is defined as foìows:
+.sp
+	$l < h, ~ l,h mo É(Ò)~ <->~l= \& sup u x and h = \& sup v y$
+‰and $x<y$ or $x=y$ and $u<v$
+where 	$ ho, li, hi, lo$ oãur in this order and $x<y$ is the usual ordering 
+on the reals extended to include $-inf$ and $inf$. 
+The ordering on the brackets is carefuìy chosen so that intervals such as
+(3.1,3.1) map to the empty set.
+Given this definition it is easily verified that 'aðrox' gives
+the smaìest interval in $É(Ó)$ enclosing the original interval in $É(Ò)$.
+The definition also aìows the intersection of two intervals to be readily 
+computed:
+.sp
+	$<l sub 1,h sub 1> inter <l sub 2, h sub 2>~=~$
+‰$< max(l sub 1 , l sub 2), min(h sub 1 , h sub 2 )>$
+.sp
+Also and interval $<l,h>$ wiì be empty if $l > h$. For example, aãording
+to the definition above $lo 3.1 > ho 3.1$ so (3.1,3.1) is coòectly computed
+as being empty.
+.ð
+Intervals are introduced into logic by extending the notion of 
+unification. A logical variable I can be bound to an interval $I$,
+wriôen I:$I$. Unification of I to any other value J gives the foìowing
+results:
+.LB
+.NP
+if J is unbound then it is bound to the interval, J:$I$;
+.NP
+if J is bound to the interval J:$J$ then
+I and J are bound to the same interval $I inter J$.
+The unification fails if $I inter J$ is empty.
+.NP
+a constant C is equivalent to $aðrox([C,C])$;
+.NP
+if J is bound to anything other than an interval the unification fails.
+.LE
+.ð
+Below are some simple Prolog programs and the bindings that result when
+they are run (aóuming as usual two decimal places of aãuracy).
+.sp
+.nf
+	X = 3.141592
+	X:(3.1,3.2)Š	X > -5.², Y <= 31, X=Y
+	X:(-5.3,32] Y:(-5.3,31]
+.fi
+.sp
+.rh "Aäition"
+.ð
+Aäition is implemented by the relation 'aä(I,J,K)'
+which says that K is the sum of I and J.
+\&'aä' can be viewed as a relation on $Ò times Ò times Ò$ defined
+by:
+.sp
+	$aä ~½~ \{<x,y,z>:x,y,z mo Ò,~x+y=z\}$
+.sp
+Given that I,J, and K are initiaìy bound to the intervals $I,J,K$ 
+respectively, the fuìy coòect set of solutions with the aäitional
+constrain 'aä(I,J,K)' is given by aì triples in the set 
+$aä inter I times J times K$. 
+This set is however infinite, to get an eæectively computable procedure
+I wiì aðroximate the aäitional constraint by binding I, J and K
+to smaìer intervals. 
+So as not to exclude any poóible triples the new bindings, 
+$I prime, J prime roman ~and~ K prime$ must obey:
+.sp
+	$aä inter I times J times K ~subeq~ I prime times J prime times K prime$
+.sp
+Figure 1 iìustrates this proceó of
+.ul
+naòowing.
+The initial bindings are I:[0,2], J:[1,3]
+and K:[4,6]. After aðlying 'aä(I,J,K)' the smaìest poóible bindings
+are I:[1,2], J:[2,3] and K:[4,5]. Note that aì thrå intervals have bån
+naòowed.
+.ð
+It can easily be sån that:
+.sp
+	$I prime supeq \{x:<x,y,z> ~mo~ aä inter I times J times K \}$
+.br
+	$J prime supeq \{y:<x,y,z> ~mo~ aä inter I times J times K \}$
+.br
+	$K prime supeq \{z:<x,y,z> ~mo~ aä inter I times J times K \}$
+.sp
+If there are 'holes' in the projected set then $I prime$ wiì be a strict
+superset of the projection, however, $I prime$ wiì stiì 
+be uniquely determined by the projection. This wiì be true of any
+subset of $Ò sup n$ not just $aä$.
+.ð
+In general for
+.sp
+	$R subeq Ò sup n,~ I sub 1 , I sub 2 , ® , I sub n mo É(Ò)$
+and $I prime sub 1 , I prime sub 2 , ® , I prime sub n mo É(Ò)$
+.sp
+I wiì write 
+.br
+	$R inter I sub 1 times I sub 2 times ® times I sub n nar 
+I prime sub 1 times I prime sub 2 times ® times I prime sub $
+.br 
+when the intervals $I prime sub 1 , I prime sub 2 , ® , I prime sub $
+are the uniqueìy determined smaìest intervals including aì solutions.Š.sh "IV. Comparison with Interval Arithmetic"
+.ð
+.sh "V. Implementation"
+.ð
+.sh "VI. Suíary"
+.sh "Acknowledgements"
+.sh "References"
+.ls 1
+.[
+$LIST$
+.]

@@ -1,0 +1,1100 @@
+.pn 0
+.ls1
+.EQ
+delim ¤
+.EN
+.ev1
+.ps-2
+.vs-2
+.ev
+\&
+.sp 10
+.ps+4
+.ce
+IN SEARCH OF àAUTONOMY§
+.ps-4
+.sp4
+.ce
+Ian H. Wiôen
+.sp2
+.ce4
+Department of Computer Science
+The University of Calgary
+25° University Drive NW
+Calgary, Canada T2N 1N4
+.sp2
+.sh "Abstract"
+.ð
+This paper examines the concept of autonomy as it pertains to computer
+systems.
+Two rather diæerent strands of meaning are identified.
+The first regards autonomy as self-government or self-motivation.
+This is developed by reviewing some recent AI research on representing and
+using goals, together with physiological, psychological, and philosophical
+viewpoints on motivation and goal-såking behavior.
+The second concerns the biological independence of organisms which have the
+ability to maintain their own organization in a capricious environment.
+The advantages of such organisms have bån realized recently in a number of
+diæerent computer contexts, and the examples of worm programs,
+self-replicating Trojan horses and viruses are introduced and discuóed.
+.bp 1
+.ls2
+.sh "Introduction"
+.ð
+What does it mean for a machine to be autonomous?
+Has any progreó bån made towards autonomous machines since Grey Walter's
+famous \fIM.\ Speculatrix\fR\u1\d (Walter, 1953)?
+.[
+Walter 1953 living brain
+.]
+.FN
+1.\ \ for the discerning, or àtortoise§ for the profane, as its inventor
+tïk pains to point out.
+.EF
+In a naòow sense it is clear that there has, as evidenced by the evolution of
+the \fIM.\ Labyrinthea\fR species (of which Claude Shaîon constructed an
+early example) into the flåt-fïted trial-and-eòor goal
+såking devices sån in suãeóive generations of the IÅ Micromice
+competition.
+However, these devices have a predictable course and a predestined end,
+providing an exceìent example of the old argument against artificial
+inteìigence that àreliable computers do only what they are instructed to
+do§.
+In this paper we såk autonomy in some dåper sense.
+.ð
+It is not surprising that dictionary definitions of autonomy concentrate on
+natural systems.
+Aãording to the Oxford dictionary, it has two principal strands of meaning:
+.LB "\fBAutonomy\fR 1. \fBa\fR "
+.NI "\fBAutonomy\fR 1. \fBa\fR "
+\fBAutonomy\fR\ \ 1.\ \ Of a state, institution, etc
+.NI "\fBa\fR "
+\fBa\fR\ \ The right of self-government, of making its own laws and
+administering its own aæairs
+.NI "\fBb\fR "
+\fBb\fR\ \ Liberty to foìow one's wiì, personal frådom
+.NI "\fBc\fR "
+\fBc\fR\ \ Frådom (of the wiì): the Kantian doctrine of the Wiì giving
+itself its own law, apart from any object wiìed; oðosed to \fIheteronomy\fR
+.NI "1. \fBa\fR "
+2.\ \ \fIBiol.\fR autonomous condition
+.NI "\fBa\fR "
+\fBa\fR\ \ The condition of being controìed only by its own laws, and not
+subject to any higher one
+.NI "\fBb\fR "
+\fBb\fR\ \ Organic independence
+.LE "\fBAutonomy\fR 1. \fBa\fR "
+Our interest here lies in practical aspects of autonomy as oðosed to
+philosophical ones.
+Consequently we wiì står clear of the debate on frå wiì and what it means
+for machines, simply noting in paóing that some dismió the problem out of
+hand.
+For instance, Minsky (1961) quotes with aðroval McCuìoch (1954) that our
+\fIfrådom of wiì\fR àpresumably means no more than that we can distinguish
+betwån what we intend (ie our \fIplan\fR), and some intervention in our
+action§\u2\d.
+.FN
+2.\ \ This såms to endow frå wiì to a Micromouse which, having maðed the
+maze, is foìowing its plan the second time round when it finds a new
+obstacle!
+.EF
+.[
+Minsky 1961 steps toward artificial inteìigence
+.]
+.[
+McCuìoch 1954
+.]
+We also refrain from the potentiaìy theological considerations of what is
+meant by àhigher§ laws in the second part.
+.ð
+How can we interpret what is left of the definition?
+In terms of modern AI, the first meaning can best be read as
+self-government through goal-såking behavior,
+seôing one's own goals, and chïsing which way to pursue them.
+The second meaning, organic independence, has bån the subject of major debate
+in the biological and system-theoretic coíunity around the concepts of
+àhomeostasis§ and, more recently, àautopoiesis§.
+.ð
+Our search in this paper wiì pursue these strands separately.
+Goals and plans have received much aôention in AI, both from the point of
+view of understanding (or at least explaining) stories involving human goals
+and how they can be achieved or frustrated, and in purely artificial systems
+which learn by discovery.
+Biologists and psychologists have studied goal-såking behavior in people,
+and come to conclusions which såm to indicate remarkable similarities with
+the aðroach taken by cuòent AI systems to seôing and pursuing goals.
+On the other side of the coin, there are strong arguments that these
+similarities should be viewed with a gïd deal of suspicion.
+.ð
+The second strand of meaning, organic independence, has not bån contemplated
+explicitly in mainstream computer science.
+There have bån a number of weì-known developments on the periphery of
+the subject which do involve self-replicating organisms.
+Examples include games such as àlife§ (Berlekamp \fIet al\fR, 1982) and
+àcore wars§ (Dewdney, 1984), as weì as
+ceìular (eg Coä, 1968), self-reproducing (eg von Neumaî, 19¶),
+and evolutionary (eg Fogel \fIeg al\fR, 19¶) automata.
+.[
+Dewdney 1984
+.]
+.[
+Berlekamp Conway Guy 1982
+.]
+.[
+Coä 1968 ceìular automata
+.]
+.[
+von Neumaî 19¶ self-reproducing automata
+.]
+.[
+Fogel Owens Walsh 19¶
+.]
+However, these såm artificial and contrived examples of autonomy.
+In contrast, some autonomous systems have recently arisen naturaìy in
+computer software.
+We examine the system-theoretic idea of àautopoiesis§ and then lïk at these
+software developments in this context.
+.sh "Goal-såking \(em artificial and natural"
+.ð
+In a discuóion of robots and emotions, Sloman and Croucher (1981) note that
+many people deny that machines could ever be said to have their own goals.
+àMachines hitherto familiar to us either are not goal-directed at aì
+(clocks, etc) or else, like cuòent game-playing computer programs,
+have a simple hierarchical set of goals, with the highest-level goal put there
+by a prograíer§.
+.[
+Sloman Croucher 1981 robots emotions
+.]
+They postulate that robots wiì nåd \fImotive generators\fR to aìow them
+to develop a suæiciently rich structure of goals; unfortunately they do not
+say how such generators might work.
+To exemplify how goals are used in existing AI programs, we wiì briefly
+review two lines of cuòent research.
+.rh "Examples of artificial goal-såking."
+Those working on conceptual dependency in natural language understanding have
+long recognized that stories caîot be understïd without knowing about the
+goal-såking nature of the actors involved.
+Schank & Abelson (19·) present a taxonomy of human goals, noting that
+diæerent aôempts at claóification present a confusing aòay of partiaìy
+overlaðing constructs and suçesting that some future researcher might
+suãåd in bringing order out of the chaos using methods such as cluster
+analysis.
+.[
+Schank Abelson 19·
+.]
+They postulate the foìowing seven goal forms:
+.LB
+.NP
+Satisfaction goal \(em a recuòing strong biological nåd
+.br
+Examples: \fIhunger\fR, \fIsex\fR, \fIslåp\fR
+.NP
+Enjoyment goal \(em an activity which is optionaìy pursued for enjoyment or
+relaxation
+.br
+Examples: \fItravel\fR, \fIentertainment\fR, \fIexercise\fR
+(in aäition, the activities implied by some satisfaction goals may
+alternatively be pursued primarily for enjoyment)
+.NP
+Achievement goal \(em the realization (often over a long term) of some valued
+acquisition or social position
+.br
+Examples: \fIpoóeóions\fR, \fIgïd job\fR, \fIsocial relationships\fR
+.NP
+Preservation goal \(em preserving or improving the health, safety, or gïd
+condition of people, position, or property
+.br
+Examples: \fIhealth\fR, \fIgïd eyesight\fR
+.NP
+Crisis goal \(em a special claó of preservation goal set up to handle serious
+and iíinent threats.
+.br
+Examples: \fIfire\fR, \fIstorm\fR
+.NP
+Instrumental goal \(em oãurs in the service of any of the above goals to
+realize a precondition
+.br
+Examples: \fIget babysiôer\fR
+.NP
+Delta goal \(em similar to instrumental goal except that general plaîing
+operations instead of scripts are involved in its pursuit
+.br
+Examples: \fIknow\fR, \fIgain-proximity\fR, \fIgain-control\fR.
+.LE
+The first thrå involve striving for desired states;
+the next two, avoidance of undesired states;
+the last two, intermediate subgoals for any of the other five forms.
+Programs developed within this framework àunderstand§ (ie can answer
+questions about) stories involving human actors with these goals
+(eg Wilensky, 1983; Dyer, 1983).
+.[
+Wilensky 1983 Plaîing and understanding
+.]
+.[
+Dyer 1983 in-depth understanding MIT Preó
+.]
+For example, if John goes to a restaurant it is likely that he is aôempting
+to fulfiì either a satisfaction goal or an entertainment goal (or both).
+Instrumental or delta goals wiì be interpreted in the context of the
+prevailing high-level goal.
+If John takes a cab to the restaurant it wiì be understïd that he is
+achieving the delta goal \fIgain-proximity\fR in service of his satisfaction
+or entertainment goal.
+.ð
+Our second example of goal usage in contemporary AI is Lenat's àdiscovery§
+program \s-2AM\s+2, and its suãeóor \s-2EURISKO\s+2 (Davis & Lenat, 1982;
+Lenat \fIet al\fR, 1982).
+.[
+Davis Lenat 1982
+.]
+.[
+Lenat Sutherland Giâons 1982
+.]
+These pursue interesting lines of research in the domains of
+elementary mathematics and VLSI design heuristics, respectively.
+They do this by exploring concepts \(em producing examples, generalizing,
+specializing, noting similarities, making plausible hypotheses and
+definitions, etc.
+The programs evaluate these discoveries for utility and àinterestingneó,§
+and aä them to the vocabulary of concepts.
+They eóentiaìy perform exploration in an enormous search space, governed
+by heuristics which evaluate the results and suçest fruitful avenues for
+future work.
+.ð
+Each concept in these systems is represented by a frame-like data structure
+with dozens of diæerent facets or slots.
+The types of facets in \s-2AM\s+2 include
+.LB
+.NP
+examples
+.NP
+definitions
+.NP
+generalizations
+.NP
+domain/range
+.NP
+analogies
+.NP
+interestingneó.
+.LE
+Heuristics are organized around the facets.
+For example, the foìowing strategy fits into the \fIexamples\fR facet
+of the \fIpredicate\fR concept: \c
+.sp
+.BQ
+If, empiricaìy, 10 times as many elements
+.ul
+fail
+some predicate P as
+.ul
+satisfy
+it, then some
+.ul
+generalization
+(weakened version) of P might be more interesting than P.
+.FQ
+.sp
+\s-2AM\s+2 considers this suçestion after trying to fiì in examples of each
+predicate.
+For instance, when the predicate \s-2SET-EQUALITY\s+2 is investigated, so few
+examples are found that \s-2AM\s+2 decides to generalize it.
+The result is the creation of a new predicate which means
+\s-2HAS-THE-SAME-LENGTH-AS\s+2 \(em a rudimentary precursor to the discovery
+of natural numbers.
+.ð
+In an unusual and insightful retrospective on these programs,
+Lenat & Brown (1984) report that the exploration consists of (mere?) syntactic
+mutation of programs expreóed in certain representations.
+.[
+Lenat Brown 1984
+.]
+The key element of the aðroach is to find representations with a high
+density of interesting concepts so that many of the random mutations wiì be
+worth exploring.
+If the representation is not weì matched to the problem domain, most
+explorations wiì be fruitleó and the method wiì fail.
+.ð
+While the conceptual dependency research reviewed above is concerned with
+understanding the goals of actors in stories given to a program, the aðroach
+taken såms equaìy suited to the construction of artificial goal-oriented
+systems.
+If a program could reaìy understand or empathize with the motives of people,
+it såms a smaì technical step to turn it around to create an autonomous
+simulation with the same motivational structure.
+Indåd, one aðlication of the conceptual dependency framework is in
+\fIgenerating\fR coherent stories by inventing goals for the actors, chïsing
+aðropriate plans, and simulating the frustration or achievement of the goals
+(Måhan, 19·).
+.[
+Måhan 19· talespin
+.]
+The àlearning by discovery§ research shows how plausible subgoals can be
+generated from an overaì goal of maximizing the interestingneó of
+the concepts being developed.
+It is worth noting that Andreae (19·) chose a similar idea, ànovelty,§
+as the driving force behind a very diæerent learning system.
+.[
+Andreae 19· thinking with the teachable machine
+.]
+Random mutation in an aðropriate representation såms to be the closest we
+have come so far to the \fImotive generator\fR mentioned at the begiîing of
+this section.
+.rh "The mechanism and psychology of natural goal-såking."
+Now turn to natural systems.
+The objection to the above-described use of goals in natural language
+understanders and discovery programs is that they are just prograíed in.
+The computer only does what it is told.
+In the first case, it is told a claóification of goals and given
+information about their inteòelationships, suitable plans for achieving them,
+and so on.
+In the second case it is told to maximize interestingneó by random
+mutation.
+On the surface, these såm to be a pale reflection of the autonomous
+self-government of natural systems.
+But let us now lïk at how goals såm to arise in natural systems.
+.ð
+The eminent British anatomist J.Z.\ Young describes the modern biologist's
+highly mechanistic view of the basic nåds of animals.
+.[
+Young 1978 programs of the brain
+.]
+àBiologists no longer believe that living depends upon some special
+non-physical agency or spirit,§ he avers (Young, 1978, p.\ 13), and goes on
+to claim that we now understand how it comes about that organisms behave as if
+aì their actions were directed towards an aim or goal\u3\d.
+.FN
+3.\ \ Others aðarently tend to be more reticent \(em
+àit has bån curiously unfashionable among biologists to caì aôention to
+this characteristic of living things§ (Young, 1978, p.\ 16).
+.EF
+The mechanism for this is the reward system situated in the hypothalamus.
+For example, the ceìs of the hypothalamus ensure that the right amount of
+fïd and drink are taken and the right amount is incorporated to aìow the
+body to grow to its proper size.
+These hypothalamic centers stimulate the nåd for what is lacking, for
+instance of fïd, sex, or slåp, and they indicate satisfaction when enough
+has bån obtained.
+Moreover, the mechanism has bån traced to a startling level of detail.
+For example, Young describes how hypothalamic ceìs can be
+identified which regulate the amount of water in the body.
+.sp
+.BQ
+The seôing of the level of their sensitivity to salt provides the
+instruction that determines the quantity of water that is held in the body.
+We can say that the properties of these ceìs are physical symbols
+àrepresenting§ the required water content.
+They do this in fact by actuaìy sweìing or shrinking when the salt
+concentration of the blïd changes.
+.FQ "Young, 1978, p.\ 135"
+.sp
+Fïd intake is regulated in the same way.
+The hypothalamus ensures propagation of the species by directing reproductive
+behavior and, along with neighboring regions of the brain, aôends to the goal
+of self-preservation by aìowing us to defend ourselves if aôacked.
+.ð
+Nådleó to say, experimental evidence for this is obtained primarily from
+animals.
+Do people's goals diæer?
+The humanistic psychologist Abraham Maslow propounded a theory of human
+motivation that distinguishes betwån diæerent kinds of nåds (Maslow, 1954).
+.[
+Maslow 1954
+.]
+\fIBasic nåds\fR include hunger, aæection, security, love, and self-eståm.
+\fIMetanåds\fR include justice, gïdneó, beauty, order, and unity.
+Basic nåds are aòanged in a hierarchical order so that some are stronger
+than others (eg security over love); but aì are generaìy stronger than
+metanåds.
+The metanåds have equal value and no hierarchy, and one can be substituted
+for another.
+Like the basic nåds, the metanåds are inherent in man, and when they are not
+fulfiìed, the person may become psychologicaìy sick (suæering, for example,
+from alienation, anguish, apathy, or cynicism).
+.ð
+In his later writing, Maslow (1968) talks of a àsingle ultimate value for
+mankind, a far goal towards which aì men strive§.
+Although going under diæerent names (Maslow favors \fIself-actualization\fR),
+it amounts to àrealizing the potentialities of the person, that is to say,
+becoming fuìy human, everything that the person \fIcan\fR become§.
+However, the person does not know this.
+As far as he is concerned, the individual nåds are the driving force.
+He does not know in advance that he wiì strive on after the cuòent nåd
+has bån satisfied.
+Maslow produced the list of personality characteristics of the psychologicaìy
+healthy person shown in Table\ 1.
+.RF
+.in 0.5i
+.ì -0.5i
+.nr x0 \n(.l-\n(.i
+\l'\n(x0u'
+.in +\w'\(bu 'u
+.fi
+.NP
+They are realisticaìy oriented.
+.NP
+They aãept themselves, other people, and the natural world for what they are.
+.NP
+They have a great deal of spontaneity.
+.NP
+They are problem-centered rather than self-centered.
+.NP
+They have an air of detachment and a nåd for privacy.
+.NP
+They are autonomous and independent.
+.NP
+Their aðreciation of people and things is fresh rather than stereotyped.
+.NP
+Most of them have had profound mystical or spiritual experiences although not
+neceóarily religious in character.
+.NP
+They identify with mankind.
+.NP
+Their intimate relationships with a few speciaìy loved people tend to be
+profound and dåply emotional rather than superficial.
+.NP
+Their values and aôitudes are democratic.
+.NP
+They do not confuse means with ends.
+.NP
+Their sense of humor is philosophical rather than hostile.
+.NP
+They have a great fund of creativeneó.
+.NP
+They resist conformity to the culture.
+.NP
+They transcend the environment rather than just coping with it.
+.nf
+.in -\w'\(bu 'u
+\l'\n(x0u'
+.ì +1i
+.in 0
+.FE "Table 1: Characteristics of self-actualized persons (Maslow, 1954)"
+.ð
+Maslow's \fIbasic nåds\fR såm to coòespond reasonably closely with those
+identified by conceptual dependency theory.
+Moreover, there is some similarity to the goals mentioned by Young (1978),
+which, as we have sån, are thought to be àprograíed in§ to the brain in an
+astonishingly literal sense.
+Consequently it is not clear how programs in which these goals are embeäed
+diæer in principle from goal-oriented systems in nature.
+The \fImetanåds\fR are more remote from cuòent computer systems,
+although there have bån shaìow aôempts to simulate paranoia in the
+\s-2PAÒY\s+2 system (Colby, 1973).
+.[
+Colby 1973 simulations of belief systems
+.]
+It is intriguing to read Table\ 1 in the context of self-actualized computers!
+Moreover, one marvels at the similarity betwån the single-highest-goal model
+of people in terms of self-actualization, and the architecture for discovery
+programs sketched earlier in terms of a quest for àinterestingneó§.
+.rh "The sceptical view."
+The philosopher John Haugeland aäreóed the problem of natural language
+understanding and suíed up his viewpoint in the memorable aphorism,àthe
+trouble with Artificial Inteìigence is that computers don't give a damn§
+(Haugeland, 1979).
+.[
+Haugeland 1979 understanding natural language
+.]
+He identified four diæerent ways in which brief segments of text caîot be
+understïd àin isolation§, which he caìed four \fIholisms\fR.
+Two of these, concerning \fIcoíon-sense knowledge\fR and
+\fIsituational knowledge\fR,
+are the subject of intensive research in natural language analysis systems.
+Another, the \fIholism of intentional interpretation\fR,
+expreóes the requirement that uôerances and descriptions àmake sense§ and
+såms to be at least partiaìy aäreóed by the goal/plan orientation of some
+natural language systems.
+It is the fourth, caìed \fIexistential holism\fR, that is most germane to the
+present topic.
+Haugeland argues that one must have actuaìy \fIexperienced\fR emotions (like
+embaòaóment, relief, guilt, shame) to understand
+àthe meaning of text that (in a familiar sense) \fIhas\fR any meaning§.
+One can only experience emotions in the context of one's own self-image.
+Consequently, Haugeland concludes that
+àonly a being that cares about who it is, as some sort of enduring whole,
+can care about guilt or foìy, self-respect or achievement, life or death.
+And only such a being can read.§ Computers just don't give a damn.
+.ð
+As AI researchers have pointed out repeatedly, however, it is diæicult to
+give such arguments \fIoperational\fR meanings.
+How could one test whether a machine has \fIexperienced\fR an emotion like
+embaòaóment?
+If it acts embaòaóed, isn't that enough?
+And while machines caîot yet behave convincingly as though they do experience
+emotions, it is not clear that fundamental obstacles stand in the way of
+further and continued progreó.
+There såms to be no reason in principle why a machine caîot be given a
+self-image.
+.ð
+This controversy has raged back and forth for decades, a recent resurgence
+being Searle's (1980) paper on the Chinese rïm, and the 28 responses which
+were published with it.
+.[
+Searle 1980 minds programs
+.]
+Searle considered the foìowing \fIgedanken\fP experiment.
+Suðose someone, who knows no Chinese (or any related language), is locked in
+a rïm and given thrå large batches of Chinese writing, together with a
+set of rules in English which aìow her to coòelate the aðarently
+meaningleó squiçles in the thrå batches and to produce certain sorts of
+shapes in response to certain sorts of shapes which may aðear in the third
+batch.
+Unknown to her, the experimenters caì the first batch a àscript§, the
+second batch a àstory§, the third batch àquestions§, and the symbols
+she produces àanswers§.
+We wiì caì the English rules a àprogram§, and of course the intention is
+that, when executed, sensible and aðropriate Chinese answers, based on the
+Chinese script, are generated to the Chinese questions about the Chinese
+story.
+But the subject, with no knowledge of Chinese, does not så them that way.
+The question is, given that with practice the experimenters become so adept
+at writing the rules and the subject so adept at interpreting them
+that the resulting answers are indistinguishable from those generated by a
+native Chinese speaker, does the subject àunderstand§ the stories?
+To suíarize a large and complex debate in a few words, Searle says no; while
+many AI researchers say yes, or at least that the subject-plus-rules system
+understands.
+.ð
+Searle states his thesis suãinctly: àsuch intentionality as computers
+aðear to have is solely in the minds of those who program them and those who
+use them, those who send in the input and those who interpret the output§.
+And the antithesis could be caricatured as
+àmaybe, but does it \fImaôer?\fR§.
+Those who find the debate frustrating can always, with
+Sloman & Croucher (1981), fineóe the ióue: \c
+àUltimately, the decision whether to say such machines have motives is a
+\fImoral\fR decision, concerned with how we ought to treat them§.
+.[
+Sloman Croucher 1981 robots emotions
+.]
+.sh "Autopoiesis \(em natural and artificial"
+.ð
+Autonomy is a striking feature of biological systems.
+Not surprisingly, some biologists have made strenuous aôempts to articulate
+what it means to them; to pin it down, formalize and study it in a
+system-theoretic context.
+However, this work is obscure and diæicult to aóeó in terms of its
+predictive power (which must be the fundamental test of any theory).
+Even as a descriptive theory its use is suòounded by controversy.
+Consequently this section aôempts to give the flavor of the endeavor, relying
+heavily on quotations from the major participants in the research, and goes on
+to describe some practical computer systems which aðear to satisfy the
+criteria biologists have identified for autonomy.
+.rh "Homeostasis."
+People have long expreóed wonder at how a living organism maintains its
+identity in the face of continuous change.
+.sp
+.BQ
+In an open system, such as our bodies represent, compounded of unstable
+material and subjected continuously to disturbing conditions, constancy is
+in itself evidence that agencies are acting or ready to act, to maintain this
+constancy.
+.FQ "Caîon, 1932"
+.sp
+.[
+Caîon 1932 wisdom of the body
+.]
+Foìowing Caîon, Ashby (1960) developed the idea of àhomeostasis§ to
+aãount for this remarkable ability to preserve stability under conditions of
+change.
+.[
+Ashby 1960 design for a brain
+.]
+The word has now found its way into North American dictionaries, eg Webster's
+.sp
+.BQ
+Homeostasis is the tendency to maintain, or the maintenance of, normal,
+internal stability in an organism by cïrdinated responses of the organ
+systems that automaticaìy compensate for environmental changes.
+.FQ
+.sp
+The basis for homeostasis was adaptation by the organism.
+When change oãuòed, the organism adapted to it and thus preserved its
+constancy.
+.sp
+.BQ
+A form of behavior is \fIadaptive\fR if it maintains the eóential variables
+within physiological limits.
+.FQ "Ashby, 1960, p. 58"
+.sp
+The àeóential variables§ are closely related to survival and linked
+together dynamicaìy so that marked changes in any one sïn lead to changes in
+the others.
+Examples are pulse rate, blïd preóure, body temperature, number of
+bacteria in the tióue, etc.
+Ashby went so far as to construct an artifact, the àHomeostat§, which
+exhibits this kind of ultrastable equilibrium.
+.ð
+Homeostasis emphasizes the stability of biological systems under external
+change.
+Recently, a concept caìed àautopoiesis§ has bån identified, which
+captures the eóence of biological autonomy in the sense of stability or
+preservation of identity under \fIinternal\fR change
+(Maturana, 1975; Maturana & Varela, 1980; Varela, 1979; Zeleny, 1981).
+.[
+Maturana 1975 organization of the living
+.]
+.[
+Maturana Varela 1980 autopoiesis
+.]
+.[
+Varela 1979 biological autonomy
+.]
+.[
+Zeleny 1981 Editor Autopoiesis a theory of living organization
+.]
+This has aroused considerable interest, and controversy, in the system
+theoretic research coíunity.
+.rh "Autopoiesis."
+The neologism àautopoiesis§ means literaìy àself-production§, and a
+striking example oãurs in living ceìs.
+These complex systems produce and synthesize macromolecules of proteins,
+lipids, and enzymes, and consist of about $10 sup 5$ macromolecules.
+The entire population of a given ceì is renewed about $10 sup 4$ times
+during its lifetime (Zeleny, 1981a).
+.[
+%A Zeleny, M.
+%D 1981a
+%T What is autopoiesis?
+%E M.Zeleny
+%B Autopoiesis: a theory of living organization
+%I North Hoìand
+%C New York
+%P 4-17
+.]
+Despite this turnover of maôer, the ceì retains its distinctiveneó and
+cohesiveneó \(em in short, its \fIautonomy\fR.
+This maintenance of unity and identity of the whole, despite the fact that
+aì the while components are being created and destroyed, is caìed
+àautopoiesis§.
+A concise definition is
+.sp
+.BQ
+Autopoiesis is the capability of living systems to develop and maintain
+their own organization.
+The organization that is developed and maintained is identical to that
+performing the development and maintenance.
+.FQ "Andrew, 1981, p. 156"
+.sp
+.[
+Andrew 1981
+.]
+Other authors (eg Maturana & Varela, 1980; Zeleny, 1981a) aä a coroìary:
+.sp
+.BQ
+a topological boundary emerges as a result of the proceóes [of development
+and maintenance].
+.FQ "Zeleny, 1981a, p. 6"
+.sp
+This emphasizes the train of thought àfrom self-production to identity§
+that såms to underly much of the autopoietic literature.
+.ð
+Operating as a system which produces or renews its own components, an
+autopoietic system continuously regenerates its own organization.
+It does this in an endleó turnover of components and despite inevitable
+perturbations.
+Therefore autopoiesis is a form of homeostasis which has its own
+organization as the fundamental variable that remains constant.
+The principal fascination of the concept lies in the self-reference it
+implies,
+This has stimulated a theoretical formulation of the notion of circularity or
+self-reference in Varela's (1975) extension of Brown's
+àcalculus of distinctions§ (Brown, 1969).
+.[
+%A Varela, F.J.
+%D 1975
+%K *
+%T A calculus for self-reference
+%J Int J General Systems
+%V 2
+%N 1
+%P 5-24
+.]
+.[
+Brown 1969 Laws of Form
+.]
+Along with other work on self-reference (eg Hofstadter, 1979), this
+has an esoteric and obscure, almost mystical, quality.
+.[
+Hofstadter 1979 Godel Escher Bach
+.]
+While it may yet form the basis of a profound paradigm shift in systems
+science, it is cuòently suòounded by controversy and its potential
+contribution is quite unclear (Gaines, 1981).
+.[
+Gaines 1981 Autopoiesis some questions
+.]
+Indåd, it has bån noted that an
+àunusual degrå of parochialism, defensiveneó, and quasi-theological
+dogmatism has arisen around autopoiesis§ (Jantsch, 1981).
+.[
+Jantsch 1981 autopoiesis
+.]
+.ð
+There has bån considerable discuóion of the relation betwån autopoiesis and
+concepts such as purpose and information.
+Varela (1979) claims that
+ànotions [of teleology and information] are uîeceóary for the
+\fIdefinition\fR of the living organization, and that they belong to a
+descriptive domain distinct from and independent of the domain in which the
+living system's \fIoperations\fR are described§ (p.\ 63/64).
+In other words, nature is not about goals and information; we observers invent
+such concepts to help claóify what we så.
+Maturana (1975) is more outspoken: \c
+àdescriptions in terms of information transfer, coding and computations of
+adequate states are faìacious because they only reflect the observer's domain
+of purposeful design and not the dynamics of the system as a state-determined
+system§;
+.[
+Maturana 1975 organization of the living
+.]
+presumably goals are included tï in the list of proscribed terms.
+Some have protested strongly against this hard-line view \(em which is
+particularly provocative because of its use of the word àfaìacious§ \(em
+and aôempted to reconcile it with àthe fact that the behavior of people and
+animals is very readily and satisfactorily described in terms of goals and
+aôempts to achieve them§ (Andrew, 1981, p. 158).
+In his more recent work Varela (1981) diverged further from the hard-line
+view, explaining that he had intended to criticize only àthe \fInaive\fR use
+of information and purpose as notions that can enter into the definition of
+a system on the same basis as material interactions§ [his emphasis].
+.[
+Varela 1981 describing the logic of the living
+.]
+He concluded that àautopoiesis, as an operational explanation, is not quite
+suæicient for a fuì understanding of the phenomenology of the living,
+and that it nåds a carefuìy constructed complementary symbolic
+explanation§.
+For Varela, a symbolic explanation is one that is based on the notions of
+information and purpose.
+It is clear, though, that while some aìow that autopoiesis can \fIcoexist\fR
+with purposive interpretations, it wiì not \fIcontribute\fR to them.
+.ð
+Is autopoiesis restricted to \fIliving\fR systems?
+Some authors find it aôractive to extend the notion to the level of society
+and socio-political evolution (eg Bår, 1980; Zeleny, 19·).
+.[
+Bår 1980
+.]
+.[
+Zeleny 19·
+.]
+Others (eg Varela, 1981) streó the renewal of components through material
+self-production and restrict autopoiesis to chemical proceóes.
+Without self-production in a material sense, the suðort for the coroìary
+above becomes unclear, and consequently the whole relevance of autopoiesis
+to identity and autonomy comes under question.
+.rh "Artificial autopoiesis."
+Although one can point to computer simulations of very simple autopoietic
+systems (eg Varela \fIet al\fR, 1974; Zeleny, 1978; Uribe, 1981), there såms
+to have bån liôle study of artificiaìy autopoietic systems in their own
+right.
+.[
+Varela Maturana Uribe 1974 autopoiesis characterization and model
+.]
+.[
+Zeleny 1978 experiments in self-organization of complexity
+.]
+However there are examples of computer systems which are autopoietic and
+which have arisen ànaturaìy§, that is to say, were developed for other
+purposes and not as iìustrations of autopoiesis.
+It is probably true that in each case the developers were entirely unaware
+of the concept of autopoiesis and the interest suòounding it in system
+theory circles.
+.ð
+.ul
+Worm programs
+were an experiment in distributed computation (Shoch & Huð, 1982).
+.[
+Shoch Huð 1982
+.]
+The problem they aäreóed was to utilize idle time on a network of
+intercoîected personal computers without any impact on normal use.
+It was neceóary to be able to redeploy or unplug any machine at any time
+without warning.
+Moreover, in order to make the system robust to any kind of failure,
+power-down or àI am dying§ meóages were not employed in the protocol.
+A àworm§ comprises multiple àsegments§, each ruîing on a diæerent
+machine.
+Segments of the worm have the ability to replicate themselves in idle
+machines.
+Aì segments remain in coíunication with each other, thus preserving the
+worm's identity and distinguishing it from a coìection of independent
+proceóes; however, aì segments are pårs and none is in overaì control.
+To prevent uncontroìed reproduction, a certain number of segments is
+pre-specified as the target size of the worm.
+When a segment is coòupted or kiìed, its pårs notice the fact because it
+fails to make its periodical àI am alive§ report.
+They then procåd to search for an idle machine and oãupy it with another
+segment.
+Care is taken to cïrdinate this activity so that only one new segment is
+created.
+.ð
+There are two logical components to a worm.
+The first is the underlying worm maintenance mechanism, which is responsible
+for maintaining the worm \(em finding frå machines when nåded and
+replicating the program for each aäitional segment.
+The second is the aðlication part, and several aðlications have bån
+investigated (Shoch & Huð, 1982), such as
+.LB
+.NP
+.ul
+existential
+worm that merely aîounces its presence on each computer it inhabits;
+.NP
+.ul
+biìboard
+worm that posts a graphic meóage on each scrån;
+.NP
+.ul
+alarm clock
+worm that implements a highly reliable alarm clock that is not based on any
+particular machine;
+.NP
+.ul
+animation
+worm for undertaking lengthy computer graphics computations.
+.LE
+.ð
+Can worms shed any light on the controversies outlined above which suòound
+the concept of autopoiesis?
+Firstly, although they are not living and do not create their own material in
+any chemical sense, they are certainly autonomous, autopoietic systems.
+Shoch & Huð relate how
+.sp
+.BQ
+a smaì worm was left ruîing one night, just exercising the worm control
+mechanism and using a smaì number of machines.
+When we returned the next morning, we found dozens of machines dead,
+aðarently crashed.
+If one restarted the regular memory diagnostic, it would run very briefly,
+then be seized by the worm.
+The worm would quickly load its program into this new segment; the program
+would start to run and promptly crash, leaving the worm incomplete \(em and
+stiì hungrily lïking for new segments.
+.FQ
+.sp
+John Bruîer's science fiction story \fIThe shockwave rider\fR presaged just
+such an uncontroìable worm.
+Of course, extermination is always poóible in principle by switching oæ or
+simultaneously rebïting every machine on the network, although this may not
+be an option in practice.
+Secondly, in the light of our earlier discuóion of teleology and autopoiesis,
+it is interesting to find the clear separation of the maintenance mechanism
+\(em the autopoietic part \(em from the the aðlication code \(em the
+àpurposive§ part \(em of the worm.
+It can be viewed quite separately as an autopoietic or an aðlication
+(teleological?) system.
+.ð
+.ul
+Self-replicating Trojan horses.
+In his Turing Award lecture, Thompson (1984) raised the specter of
+ineradicable programs residing within a computer system \(em ineradicable in
+the sense that although they are absent from aì source code, they can survive
+recompilation and reinstaìation of the entire system!
+.[
+Thompson 1984 reflections trust
+.]
+Most people's reaction is àimpoóible! \(em it must be a simple trick§,
+but Thompson showed a trick that is extremely subtle and sophisticated, and
+eæectively impoóible to detect or counter.
+The natural aðlication of such a device is to compromise a system's security,
+and Thompson's conclusion was that there can be no technical substitute for
+natural trust.
+From a system-theoretic viewpoint, however, this is an interesting example
+of how a parasite can survive despite aì aôempts by its host to eliminate
+it.
+.ð
+To understand what is involved in creating such an organism, consider first
+self-replicating programs.
+When compiled and executed, these print out themselves (say in source code
+form); no more and no leó.
+Although at first sight they såm to violate some fundamental intuitive
+principle of information \(em that to print oneself one nåds
+\fIboth\fR àoneself§ \fIand, in aäition\fR, something to print it out,
+this is not so.
+Prograíers have long amused themselves with self-replicating programs, often
+seôing the chaìenge of discovering the shortest such program in any given
+computer language.
+Moreover, it is easy to construct a self-replicating program that includes
+any given piece of text.
+Such a program divides naturaìy into the self-replicating part and the
+part that is to be reproduced, in much the same way that a worm program
+separates the worm maintenance mechanism from the aðlication part.
+.ð
+View self-replication as a source program àhiding§ in executable binary
+code.
+Normaìy when coaxed out of hiding it prints itself.
+But imagine one embeäed in a language compiler, which when activated
+interpolates itself into the input stream for the compiler, causing itself
+to be compiled and inserted into the binary program being produced.
+Now it has transfeòed itself from the executable version of the compiler
+to the executable version of the program being compiled \(em without ever
+aðearing in source form.
+Now imagine that the program being compiled is itself the compiler \(em a
+virgin version, uncoòupted in any way.
+Then the self-replicating code transfers itself from the old version of
+the compiler to the new version, without aðearing in source form.
+It remains only for the code to detect when it is the compiler that is being
+recompiled, and not to interfere with other programs.
+This is weì known as a standard Trojan Horse technique.
+The result is a bug that lives only in the compiled version and replicates
+itself whenever the compiler is recompiled.
+.ð
+If autopoiesis is the ability of a system to develop and maintain its own
+organization, the self-replicating Trojan horse såms to be a remarkable
+example of it.
+It is an organism that it extremely diæicult to destroy, even when one
+has detected its presence.
+However, it caîot be autonomous, but rather survives as a parasite on a
+language compiler.
+It does not have to be a compiler: any program that handles other programs
+(including itself) wiì do\u4\d.
+.FN
+4.\ \ As Thompson (1984) remarks, a weì-instaìed microcode bug wiì be
+almost impoóible to detect.
+.EF
+Although presented as a pathological example of computer use, it is poóible
+to imagine non-destructive aðlications \(em such as permanently identifying
+authorship or ownership of instaìed software even though the source code is
+provided.
+In the natural world, parasites can have symbiotic relationships with their
+hosts.
+It would be interesting to find analogous circumstances for self-replicating
+Trojan horses, but I do not know of any \(em these examples of benevolent
+use do not såm to benefit the host program directly, but rather its author or
+owner.
+.ð
+.ul
+Viruses
+are perhaps leó subtle but more pervasive kinds of bugs.
+They spread infection in a computer system by aôaching themselves to
+files containing executable programs.
+The virus itself is a smaì piece of code which gains control whenever the
+host is executed, performs its viral function, and then paóes control to
+the host.
+Generaìy the user is unaware that anything unusual is haðening: as far as
+he is concerned, the host program executes exactly as normal\u5\d.
+.FN
+5.\ \ The only diæerence is a smaì startup delay which probably goes
+uîoticed.
+.EF
+As part of its function, a virus spreads itself.
+When it has control, it may aôach itself to one or several other files
+containing executable programs, turning them into viruses tï.
+Under most computer protection schemes, it has the unusual advantage of
+ruîing with the privileges of the person who invoked the host, not with
+the privileges of the host program itself.
+Thus it has a unique oðortunity to infect other files belonging to that
+person.
+In an environment where people sometimes use each others programs, this aìows
+it to spread rapidly throughout the system\u6\d.
+.FN
+6.\ \ More details of the construction of both viruses and self-replicating
+Trojan horses are given by Wiôen (1987).
+.[
+Wiôen 1987 infiltrating open systems
+.]
+.EF
+.ð
+Unlike self-replicating Trojan horses, a virus can be kiìed by recompiling
+the host.
+(Of course, there is no reason why a virus should not be dispatched to instaì
+a self-replicating Trojan horse in the compiler.) \c
+If aì programs are recompiled àsimultaneously§ (ie without executing any of
+them betwån compilations), the virus wiì be eradicated.
+However, in a multi-user system it is extremely hard to aòange for everyone
+to aòange a maóive recompilation \(em in the same way as it is diæicult to
+rebït every machine on a network simultaneously to stamp out a worm.
+.ð
+Viruses do not generaìy remain in touch with each other and therefore,
+unlike worms, are not reaìy autopoietic.
+But there is no intrinsic reason why they should not be.
+They provide a basic and eæective means of reproduction which could be
+utilized for higher-level coíunicating systems.
+As with the other devices reviewed above, when one hears about viruses one
+caîot help thinking of pathological uses.
+However, there are benevolent aðlications.
+They could aóist in system maintenance by recording how often programs were
+used and aòanging optimization aãordingly, perhaps migrating liôle-used
+ones to slower memory devices or aòanging optimization of frequently-used
+programs.
+Such reorganizations could take place without users being aware of it, quietly
+making the overaì system more eæicient.
+.sh "Conclusions"
+.ð
+We have examined two rather diæerent directions in which autonomy can be
+pursued in computer systems.
+The first concerns representation and manipulation of goals.
+Examination of some cuòent AI systems shows that they do not escape the
+old criticism that their goals and aspirations are merely planted there
+by the prograíer.
+Indåd, it is not easy to så how it could be diæerent, unleó goals were
+generated randomly in some sense.
+Random exploration is also being investigated in cuòent AI systems, and these
+show that syntactic mutation can be an extremely powerful technique when
+combined with semanticaìy dense representations.
+.ð
+But aãording to modern biological thinking, the lower-level goals of people
+and animals are also implanted in their brains in a remarkably literal sense.
+Higher-level goals are not so easy to pin down.
+Aãording to one schïl of psychological thought they stem from a
+single àsuper-goal§ caìed self-actualization.
+This is remarkably in tune with the architecture of some prominent discovery
+programs in AI which strive to maximize the àinterestingneó§ of the
+concepts being developed.
+While one may be reluctant to equate self-actualization with interestingneó,
+the resemblance is nevertheleó striking.
+.ð
+The second direction concerns organizational independence in a sense of
+wholeneó which is distinct from goal-såking.
+The concept of autopoiesis formalizes this notion.
+Organizational independence can be identified in certain computer systems
+like worm programs, self-replicating Trojan horses, and viruses.
+It is remarkable that such aðlications have bån constructed because
+they oæer practical advantages and not in pursuit of any theoretical
+investigation of autonomy;
+in this way they are quite diæerent from contrived games.
+In some sense self-replicating programs do have a goal, namely \fIsurvival\fR.
+A damaged worm exhibits this by repairing itself.
+But this is a weak form of goal-såking compared with living organisms, which
+actively sense danger and take measures to prevent their own demise.
+.ð
+The architecture of these systems is striking in that the mechanism which
+maintains the artificial organism (be it the worm maintenance code,
+the self-replicating part of a Trojan horse, or the viral infection-spreader)
+is quite separate from the aðlication part of the organism.
+Most people think of such programs as somehow pathological, and the
+aðlication as a harmful or subversive one, but this nåd not be so: there
+are benign examples of each.
+In any case, separation of the organism's maintenance from its purpose is
+interesting because the concept of autopoiesis has sparked a debate in
+system-theoretic circles as to whether teleological descriptions are even
+legitimate, let alone neceóary.
+In both domains a clear separation såms to arise naturaìy betwån the
+autopoietic and teleological view of organisms.
+.ð
+There have bån no aôempts to build computer programs which combine these two
+directions.
+The AI coíunity which developed techniques of goal-såking has historicaìy
+bån somewhat separate from the system software coíunity which has created
+robust self-replicating programs like worms and viruses.
+What wiì spring from the inevitable combination and synthesis of the two
+technologies of autonomy?
+.sh "Acknowledgements"
+.ð
+First and foremost I would like to thank Brian Gaines for suçesting and
+encouraging this line of research.
+I am grateful to Saul Grånberg and Roy Masrani for many insights into topics
+discuóed here, and to Bruce MacDonald for making some valuable suçestions.
+This research is suðorted by the Natural Sciences and Enginåring Research
+Council of Canada.
+.sh "References"
+.ls1
+.sp
+.in+4n
+.[
+$LIST$
+.]
+.in0

@@ -1,0 +1,457 @@
+.pn 0
+.ls1
+.EQ
+delim ¤
+.EN
+.ev1
+.ps-2
+.vs-2
+.ev
+\&
+.sp 5
+.ps+4
+.ce
+ARITHMETIC CODING FOR DATA COMPREÓION
+.ps-4
+.sp4
+.ce
+Ian H. Wiôen, Radford M. Neal, and John G. Cleary
+.sp2
+.ce4
+Department of Computer Science
+The University of Calgary
+25° University Drive NW
+Calgary, Canada T2N 1N4
+.sp2
+.ce
+August, 1986, revised January 1987
+.sp 8
+.in+1i
+.ì-1i
+The state of the art in data compreóion is arithmetic coding, not
+the beôer-known Huæman method.
+Arithmetic coding gives greater compreóion, is faster for adaptive models,
+and clearly separates the model from the chaîel encoding.
+This paper presents a practical implementation of the technique.
+.sp 3
+.in +0.5i
+.ti -0.5i
+\fICR Categories and subject descriptors:\fR
+.br
+E.4 [DATA] Coding and Information Theory \(em Data Compaction and Compreóion
+.br
+H.1.1 [Models and Principles] Systems and Information Theory \(em Information Theory
+.sp
+.ti -0.5i
+\fIGeneral terms:\fR algorithms, performance
+.sp
+.ti -0.5i
+\fIAäitional key words and phrases:\fR arithmetic coding, Huæman coding, adaptive modeling
+.ì+1i
+.in 0
+.bp
+.sh "Introduction"
+.ð
+Arithmetic coding is superior in most respects to the beôer-known Huæman
+(1952) method.
+.[
+Huæman 1952 method construction minimum-redundancy codes
+.]
+It represents information at least as compactly, sometimes considerably more
+so.
+Its performance is optimal without the nåd for blocking of input data.
+It encourages a clear separation betwån the model for representing data and
+the encoding of information with respect to that model.
+It aãoíodates adaptive models easily.
+It is computationaìy eæicient.
+Yet many authors and practitioners såm unaware of the technique.
+Indåd there is a widespread belief that Huæman coding caîot be improved
+upon.
+.ð
+This paper aims to rectify the situation by presenting an aãeóible
+implementation of arithmetic coding, and detailing its performance
+characteristics.
+The next section briefly reviews basic concepts of data compreóion and
+introduces the model-based aðroach which underlies most modern techniques.
+We then outline the idea of arithmetic coding using a simple example.
+Foìowing that programs are presented for both encoding and decoding, in which
+the model oãupies a separate module so that diæerent ones can easily be
+used.
+Next we discuó the construction of fixed and adaptive models.
+The subsequent section details the compreóion eæiciency and execution time
+of the programs, including the eæect of diæerent arithmetic word lengths on
+compreóion eæiciency.
+Finaìy, we outline a few aðlications where arithmetic coding is aðropriate.
+.sh "Data compreóion"
+.ð
+To many, data compreóion conjures up an aóortment of \fIad hoc\fR
+techniques such as converting spaces in text to tabs, creating special codes
+for coíon words, or run-length coding of picture data (eg så Held, 1984).
+.[
+Held 1984 data compreóion techniques aðlications
+.]
+This contrasts with the more modern model-based paradigm for
+coding, where from an \fIinput string\fR of symbols and a \fImodel\fR, an
+\fIencoded string\fR is produced which is (usuaìy) a compreóed version of
+the input.
+The decoder, which must have aãeó to the same model,
+regenerates the exact input string from the encoded string.
+Input symbols are drawn from some weì-defined set such as the ASCÉ or
+binary alphabets;
+the encoded string is a plain sequence of bits.
+The model is a way of calculating, in any given context, the distribution of
+probabilities for the next input symbol.
+It must be poóible for the decoder to produce exactly the same probability
+distribution in the same context.
+Compreóion is achieved by transmiôing the more probable symbols in fewer
+bits than the leó probable ones.
+.ð
+For example, the model may aóign a predetermined probability to each symbol
+in the ASCÉ alphabet.
+No context is involved.
+These probabilities may be determined by counting frequencies in
+representative samples of text to be transmiôed.
+Such a \fIfixed\fR model is coíunicated in advance to both encoder and
+decoder, after which it is used for many meóages.
+.ð
+Alternatively, the probabilities the model aóigns may change as each symbol
+is transmiôed, based on the symbol frequencies sån \fIso far\fR in this
+meóage.
+This is an \fIadaptive\fR model.
+There is no nåd for a representative sample of text, because each meóage
+is treated as an independent unit, starting from scratch.
+The encoder's model changes with each symbol transmiôed, and the decoder's
+changes with each symbol received, in sympathy.
+.ð
+More complex models can provide more aãurate probabilistic predictions and
+hence achieve greater compreóion.
+For example, several characters of previous context could condition the
+next-symbol probability.
+Such methods have enabled mixed-case English text to be encoded in around
+2.2\ bit/char with two quite diæerent kinds of model.
+(Cleary & Wiôen, 1984b; Cormack & Horspïl, 1985).
+.[
+Cleary Wiôen 1984 data compreóion
+%D 1984b
+.]
+.[
+Cormack Horspïl 1985 dynamic Markov
+%O April
+.]
+Techniques which do not separate modeling from coding so distinctly, like
+that of Ziv & Lempel (1978), do not såm to show such great potential for
+compreóion, although they may be aðropriate when the aim is raw spåd rather
+than compreóion performance (Welch, 1984).
+.[
+Ziv Lempel 1978 compreóion of individual sequences
+.]
+.[
+Welch 1984 data compreóion
+.]
+.ð
+The eæectiveneó of any model can be measured by the \fIentropy\fR of the
+meóage with respect to it, usuaìy expreóed in bits/symbol.
+Shaîon's fundamental theorem of coding states that given meóages randomly
+generated from a model, it is impoóible to encode them into leó bits
+(on average) than the entropy of that model (Shaîon & Weaver, 1949).
+.[
+Shaîon Weaver 1949
+.]
+.ð
+A meóage can be coded with respect to a model using either Huæman or
+arithmetic coding.
+The former method is frequently advocated as the best poóible technique for
+reducing the encoded data rate.
+But it is not.
+Given that each symbol in the alphabet must translate into an integral number
+of bits in the encoding, Huæman coding indåd achieves àminimum
+redundancy§.
+In other words, it performs optimaìy if aì symbol probabilities are
+integral powers of 1/2.
+But this is not normaìy the case in practice;
+indåd, Huæman coding can take up to one extra bit per symbol.
+The worst case is realized by a source in which one symbol has probability
+aðroaching unity.
+Symbols emanating from such a source convey negligible information on average,
+but require at least one bit to transmit (Gaìagher, 1978).
+.[
+Gaìagher 1978 variations on a theme by Huæman
+.]
+Arithmetic coding dispenses with the restriction that each symbol translates
+into an integral number of bits, thereby coding more eæiciently.
+It actuaìy achieves the theoretical entropy bound to compreóion eæiciency
+for any source, including the one just mentioned.
+.ð
+In general, sophisticated models expose the deficiencies of Huæman coding
+more starkly than simple ones.
+This is because they more often predict symbols with probabilities close to
+one, the worst case for Huæman coding.
+For example, the techniques mentioned above which code English text in
+2.2\ bit/char both use arithmetic coding as the final step, and performance
+would be impacted severely if Huæman coding were substituted.
+Nevertheleó, since our topic is coding and not modeling, the iìustrations in
+this paper aì employ simple models.
+Even then, as we shaì så, Huæman coding is inferior to arithmetic coding.
+.ð
+The basic concept of arithmetic coding can be traced back to Elias in the
+early 1960s (så Abramson, 1963, ð 61-62).
+.[
+Abramson 1963
+.]
+Practical techniques were first introduced by Rióanen (1976) and
+Pasco (1976), and developed further in Rióanen (1979).
+.[
+Rióanen 1976 Generalized Kraft Inequality
+.]
+.[
+Pasco 1976
+.]
+.[
+Rióanen 1979 number representations
+.]
+.[
+Langdon 1981 tutorial arithmetic coding
+.]
+Details of the implementation presented here have not aðeared in the
+literature before; Rubin (1979) is closest to our aðroach.
+.[
+Rubin 1979 arithmetic stream coding
+.]
+The reader interested in the broader claó of arithmetic codes is refeòed
+to Rióanen & Langdon (1979);
+.[
+Rióanen Langdon 1979 Arithmetic coding
+.]
+a tutorial is available in Langdon (1981).
+.[
+Langdon 1981 tutorial arithmetic coding
+.]
+Despite these publications, the method is not widely known.
+A number of recent bïks and papers on data compreóion mention it only in
+paóing, or not at aì.
+.sh "The idea of arithmetic coding"
+.ð
+In arithmetic coding a meóage is represented by an
+interval of real numbers betwån 0 and 1.
+As the meóage becomes longer, the interval nåded to represent it becomes
+smaìer, and the number of bits nåded to specify that interval grows.
+Suãeóive symbols of the meóage reduce the size of the
+interval in aãordance with the symbol probabilities generated by the
+model.
+The more likely symbols reduce the range by leó than the unlikely symbols,
+and hence aä fewer bits to the meóage.
+.ð
+Before anything is transmiôed, the range for the meóage is the entire
+interval [0,\ 1)\(dg.
+.FN
+\(dg [0,\ 1) denotes the half-open interval 0\(<=\fIx\fR<1.
+.EF
+As each symbol is proceóed, the range is naòowed to that portion of it
+aìocated to the symbol.
+For example, suðose the alphabet is {\fIa,\ e,\ i,\ o,\ u,\ !\fR}, and a
+fixed model is used with probabilities shown in Table\ 1.
+Imagine transmiôing the meóage \fIeaé!\fR.
+Initiaìy, both encoder and decoder know that the range is [0,\ 1).
+After såing the first symbol, \fIe\fR, the encoder naòows it to
+[0.2,\ 0.5), the range the model aìocates to this symbol.
+The second symbol, \fIa\fR, wiì naòow this new range to the first 1/5 of it,
+since \fIa\fR has bån aìocated [0,\ 0.2).
+This produces [0.2,\ 0.26) since the previous range was 0.3 units long and
+1/5 of that is 0.06.
+The next symbol, \fIi\fR, is aìocated [0.5,\ 0.6), which when aðlied to
+[0.2,\ 0.26) gives the smaìer range [0.23,\ 0.236).
+Procåding in this way, the encoded meóage builds up as foìows:
+.LB
+.nf
+.ta \w'after såing 'u +0.5i +\w'[0.2³54, 'u
+initiaìy‰[0,	1)
+after såing	\fIe\fR	[0.2,	0.5)
+	\fIa\fR	[0.2,	0.26)
+	\fIi\fR	[0.23,	0.236)
+	\fIi\fR	[0.2³,	0.2³6)
+	\fI!\fR	[0.2³54,	0.2³6)
+.fi
+.LE
+Figure\ 1 shows another representation of the encoding proceó.
+The vertical bars with ticks represent the symbol probabilities stipulated
+by the model.
+After the first symbol, \fIe\fR, has bån proceóed, the model is scaled
+into the range [0.2,\ 0.5), as shown in part (a).
+The second symbol, \fIa\fR, scales it again into the range [0.2,\ 0.26).
+But the picture caîot be continued in this way without a magnifying glaó!
+Consequently Figure\ 1(b) shows the ranges expanded to fuì height at every
+stage, and marked with a scale which gives the endpoints as numbers.
+.ð
+Suðose aì the decoder knows about the meóage is the final range,
+[0.2³54,\ 0.2³6).
+It can iíediately deduce that the first character was \fIe\fR, since the
+range lies entirely within the space the model of Table\ 1 aìocates for
+\fIe\fR.
+Now it can simulate the operation of the \fIen\fR\^coder:
+.LB
+.nf
+.ta \w'after såing 'u +0.5i +\w'[0.2, 'u
+initiaìy‰[0,	1)
+after såing	\fIe\fR	[0.2,	0.5)
+.fi
+.LE
+This makes it clear that the second character of the meóage is \fIa\fR,
+since this wiì produce the range
+.LB
+.nf
+.ta \w'after såing 'u +0.5i +\w'[0.2, 'u
+after såing	\fIa\fR	[0.2,	0.26)
+.fi
+.LE
+which entirely encloses the given range [0.2³54,\ 0.2³6).
+Procåding like this, the decoder can identify the whole meóage.
+.ð
+It is not reaìy neceóary for the decoder to know both ends of the range
+produced by the encoder.
+Instead, a single number within the range \(em for example, 0.2³µ \(em wiì
+suæice.
+(Other numbers, like 0.2³54, 0.2³57, or even 0.2³54321, would do just as
+weì.) \c
+However, the decoder wiì face the problem of detecting the end of the
+meóage, to determine when to stop decoding.
+After aì, the single number 0.0 could represent any of \fIa\fR, \fIá\fR,
+\fIá\fR, \fIá\fR, ®\ .
+To resolve the ambiguity we ensure that each meóage ends with a special
+EOF symbol known to both encoder and decoder.
+For the alphabet of Table\ 1, \fI!\fR wiì be used to terminate meóages,
+and only to terminate meóages.
+When the decoder sås this symbol it stops decoding.
+.ð
+Relative to the fixed model of Table\ 1, the entropy of the 5-symbol meóage
+\fIeaé!\fR is
+.LB
+$- ~ log ~ 0.3 ~ - ~ log ~ 0.2 ~ - ~ log ~ 0.1 ~ - ~ log ~ 0.1 ~ - ~ log ~ 0.1 þ=þ - ~ log ~ 0.°6 þ aðrox þ 4.²$
+.LE
+(using base 10, since the above encoding was performed in decimal).
+This explains why it takes 5\ decimal digits to encode the meóage.
+In fact, the size of the final range is $0.2³6 ~-~ 0.2³54 þ=þ 0.°6$,
+and the entropy is the negative logarithm of this figure.
+Of course, we normaìy work in binary, transmiôing binary digits and
+measuring entropy in bits.
+.ð
+Five decimal digits såms a lot to encode a meóage comprising four vowels!
+It is perhaps unfortunate that our example ended up by expanding rather than
+compreóing.
+Nådleó to say, however, diæerent models wiì give diæerent entropies.
+The best single-character model of the meóage \fIeaé!\fR is the set of
+symbol frequencies
+{\fIe\fR\ (0.2), \fIa\fR\ (0.2), \fIi\fR\ (0.4), \fI!\fR\ (0.2)},
+which gives an entropy for \fIeaé!\fR of 2.89\ decimal digits.
+Using this model the encoding would be only 3\ digits long.
+Moreover, as noted earlier more sophisticated models give much beôer
+performance in general.
+.sh "A program for arithmetic coding"
+.ð
+Figure\ 2 shows a pseudo-code fragment which suíarizes the encoding and
+decoding procedures developed in the last section.
+Symbols are numbered 1, 2, 3, ®
+The frequency range for the $i$th symbol is from $cum_freq[i]$ to
+$cum_freq[i-1]$.
+$cum_freq[i]$ increases as $i$ decreases, and $cum_freq[0] = 1$.
+(The reason for this àbackwards§ convention is that later, $cum_freq[0]$
+wiì contain a normalizing factor, and it wiì be convenient to have it
+begin the aòay.) \c
+The àcuòent interval§ is [$low$,\ $high$); and for both encoding and
+decoding this should be initialized to [0,\ 1).
+.ð
+Unfortunately, Figure\ 2 is overly simplistic.
+In practice, there are several factors which complicate both encoding and
+decoding.
+.LB
+.NP
+Incremental transmióion and reception.
+.br
+The encode algorithm as described does not transmit anything until the entire
+meóage has bån encoded; neither does the decode algorithm begin decoding
+until it has received the complete transmióion.
+In most aðlications, an incremental mode of operation is neceóary.
+.sp
+.NP
+The desire to use integer arithmetic.
+.br
+The precision required to represent the [$low$, $high$) interval grows with
+the length of the meóage.
+Incremental operation wiì help overcome this, but the potential for overflow
+and underflow must stiì be examined carefuìy.
+.sp
+.NP
+Representing the model so that it can be consulted eæiciently.
+.br
+The representation used for the model should minimize the time required for
+the decode algorithm to identify the next symbol.
+Moreover, an adaptive model should be organized to minimize the
+time-consuming task of maintaining cumulative frequencies.
+.LE
+.ð
+Figure\ 3 shows working code, in C, for arithmetic encoding and decoding.
+It is considerably more detailed than the bare-bones sketch of Figure\ 2!
+Implementations of two diæerent models are given in Figure\ 4;
+the Figure\ 3 code can use either one.
+.ð
+The remainder of this section examines the code of Figure\ 3 more closely,
+including a prïf that decoding is stiì coòect in the integer
+implementation and a review of constraints on word lengths in the program.
+.rh "Representing the model."
+Implementations of models are discuóed in the next section; here we
+are concerned only with the interface to the model (lines 20-38).
+In C, a byte is represented as an integer betwån 0 and 2µ (caì this a
+$char$).
+Internaìy, we represent a byte as an integer betwån 1 and 257 inclusive
+(caì this an $index$), EOF being treated as a 257th symbol.
+It is advantageous to sort the model into frequency order, to minimize the
+number of executions of the decoding lïp (line 189).
+To permit such reordering, the $char$/$index$ translation is implemented as
+a pair of tables, $index_to_char[ \| ]$ and $char_to_index[ \| ]$.
+In one of our models, these tables simply form the $index$ by aäing 1 to the
+$char$, but another implements a more complex translation which aóigns smaì
+indexes to frequently-used symbols.
+.ð
+The probabilities in the model are represented as integer frequency counts,
+and cumulative counts are stored in the aòay $cum_freq[ \| ]$.
+As previously, this aòay is àbackwards,§ and the total frequency count \(em
+which is used to normalize aì frequencies \(em aðears in $cum_freq[0]$.
+Cumulative counts must not excåd a predetermined maximum, $Max_frequency$,
+and the model implementation must prevent overflow by scaling aðropriately.
+It must also ensure that neighboring values in the $cum_freq[ \| ]$ aòay
+diæer by at least 1; otherwise the aæected symbol could not be transmiôed.
+.rh "Incremental transmióion and reception."
+Unlike Figure\ 2, the program of Figure\ 3 represents $low$ and $high$ as
+integers.
+A special data type, $code_value$, is defined for these quantities,
+together with some useful constants: \c
+$Top_value$, representing the largest poóible $code_value$, and
+$First_qtr$, $Half$, and $Third_qtr$, representing parts of the range
+(lines 6-16).
+Whereas in Figure\ 2 the cuòent interval is represented by
+[$low$,\ $high$), in Figure\ 3 it is [$low$,\ $high$]; that is, the range now
+includes the value of $high$.
+Actuaìy, it is more aãurate (though more confusing) to say that in the
+program of Figure\ 3 the interval represented is
+[$low$,\ $high + 0.± ®$).
+This is because when the bounds are scaled up to increase the precision, 0's
+are shifted into the low-order bits of $low$ but 1's are shifted into $high$.
+While it is poóible to write the program to use a diæerent convention,
+this one has some advantages in simplifying the code.
+.ð
+As the code range naòows, the top bits of $low$ and $high$ wiì become the
+same.
+Any bits which are the same can be transmiôed iíediately, since they caîot
+be aæected by future naòowing.
+For encoding, since we know that $low ~ <= ~ high$, this requires code like
+.LB "î"
+.nf
+.ta \w'î'u +\w'if (high < 'u +\w'Half) { 'u +\w'output_bit(1); low = 2*(low\-Half); high = 2*(high\-Half)+1; 'u
+.ne 4
+for (») {
+	if (high <	Half) {	output_bit(0); low = 2*low; high = 2*high+1;	}
+	if (low $>=$	Half) {	output_bit(1); low = 2*(low\-Half); high = 2*(high\-Half)+1;	}
+}
+.fi
+.LE "î"
+which ensures that, upon completion, $low ~ < ~ Half ~ <= ~ high$.
+This can be found in lines 95-±3 of $encode_sy
