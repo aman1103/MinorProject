@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utypes.h"
+#include "UTYPES.H"
 #include "gtbitio.c"
 #include "lzwbt.c"
 
