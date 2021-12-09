@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 folderpath = './Datasets/'
 
 execs = ["huffman", "adaptive-huffman", "rle", "efficientrle", "lz77", "lz78"]
-# execs = ["huffman", "rle", "efficientrle"]
-# execs = ["huffman", "rle"]
 
 for ex in execs:
     with open("./csvs/" + ex + ".csv", 'w', newline='') as file:
