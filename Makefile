@@ -2,5 +2,8 @@ build:
 	chmod +x compile.sh
 	./compile.sh
 
-report:
+csv:
 	python3 generate_csv.py
+
+report:
+	python3 csv_to_graph.py

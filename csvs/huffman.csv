@@ -18,10 +18,9 @@ grammar.lsp,./Datasets/Canterbury_Corpus/grammar.lsp,3721,3406,0.084654662725073
 lcet10.txt,./Datasets/Canterbury_Corpus/lcet10.txt,426754,251929,0.4096622410100432
 plrabn12.txt,./Datasets/Canterbury_Corpus/plrabn12.txt,481861,276901,0.42535087919545267
 xargs.1,./Datasets/Canterbury_Corpus/xargs.1,4227,3806,0.09959782351549562
-bible.txt,./Datasets/Large_text_files/bible.txt,4047392,0,1.0
-E.coli,./Datasets/Large_text_files/E.coli,4638690,0,1.0
-world192.txt,./Datasets/Large_text_files/world192.txt,2473400,0,1.0
+bible.txt,./Datasets/Large_text_files/bible.txt,4047392,2219478,0.451627616005566
+E.coli,./Datasets/Large_text_files/E.coli,4638690,1159757,0.7499817836501254
+world192.txt,./Datasets/Large_text_files/world192.txt,2473400,1560119,0.36924112557613
 hi,./Datasets/protein_corpus/hi,509519,266795,0.476378702266255
-hs,./Datasets/protein_corpus/hs,3295751,0,1.0
-mj,./Datasets/protein_corpus/mj,448779,230576,0.48621481842956105
-sc,./Datasets/protein_corpus/sc,2900352,0,1.0
+hs,./Datasets/protein_corpus/hs,3295751,1714204,0.4798745414929708
+sc,./Datasets/protein_corpus/sc,2900352,1521836,0.4752926541330156

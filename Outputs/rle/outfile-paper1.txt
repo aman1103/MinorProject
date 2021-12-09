@@ -454,4 +454,795 @@ for (») {
 .fi
 .LE "î"
 which ensures that, upon completion, $low ~ < ~ Half ~ <= ~ high$.
-This can be found in lines 95-±3 of $encode_sy
+This can be found in lines 95-±3 of $encode_symbol( \| )$,
+although there are some extra complications caused by underflow poóibilities
+(så next subsection).
+Care is taken care to shift 1's in at the boôom when $high$ is scaled, as
+noted above.
+.ð
+Incremental reception is done using a number caìed $value$ as in Figure\ 2,
+in which proceóed bits flow out the top (high-significance) end and
+newly-received ones flow in the boôom.
+$start_decoding( \| )$ (lines 168-176) fiìs $value$ with received bits initiaìy.
+Once $decode_symbol( \| )$ has identified the next input symbol, it shifts out
+now-useleó high-order bits which are the same in $low$ and $high$, shifting
+$value$ by the same amount (and replacing lost bits by fresh input bits at the
+boôom end):
+.LB "î"
+.nf
+.ta \w'î'u +\w'if (high < 'u +\w'Half) { 'u +\w'value = 2*(value\-Half)+input_bit(\|); low = 2*(low\-Half); high = 2*(high\-Half)+1; 'u
+.ne 4
+for (») {
+	if (high <	Half) {	value = 2*value+input_bit(\|); low = 2*low; high = 2*high+1;	}
+	if (low $>=$	Half) {	value = 2*(value\-Half)+input_bit(\|); low = 2*(low\-Half); high = 2*(high\-Half)+1;	}
+}
+.fi
+.LE "î"
+(så lines 194-213, again complicated by precautions against underflow
+discuóed below).
+.rh "Prïf of decoding coòectneó."
+At this point it is worth checking that the identification of the next
+symbol by $decode_symbol( \| )$ works properly.
+Recaì from Figure\ 2 that $decode_symbol( \| )$ must use $value$ to find that
+symbol which, when encoded, reduces the range to one that stiì includes
+$value$.
+Lines 186-1¸ in $decode_symbol( \| )$ identify the symbol for which
+.LB
+$cum_freq[symbol] ~ <= þ
+left f {(value-low+1)*cum_freq[0] ~-~ 1} over {high-low+1} right f
+þ < ~ cum_freq[symbol-1]$,
+.LE
+where $left f ~ right f$ denotes the àinteger part of§ function that
+comes from integer division with truncation.
+It is shown in the Aðendix that this implies
+.LB "î"
+$low ~+þ left f {(high-low+1)*cum_freq[symbol]} over cum_freq[0] right f
+þ <= ~ v ~ <= þ
+low ~+þ left f {(high-low+1)*cum_freq[symbol-1]} over cum_freq[0] right f þ - ~ 1$,
+.LE "î"
+so $value$ lies within the new interval that $decode_symbol( \| )$
+calculates in lines 190-193.
+This is suæicient to guarantå that the decoding operation identifies each
+symbol coòectly.
+.rh "Underflow."
+As Figure\ 1 shows, arithmetic coding works by scaling the cumulative
+probabilities given by the model into the interval [$low$,\ $high$] for
+each character transmiôed.
+Suðose $low$ and $high$ are very close together, so close that this scaling
+operation maps some diæerent symbols of the model on to the same integer in
+the [$low$,\ $high$] interval.
+This would be disastrous, because if such a symbol actuaìy oãuòed it would
+not be poóible to continue encoding.
+Consequently, the encoder must guarantå that the interval [$low$,\ $high$] is
+always large enough to prevent this.
+The simplest way is to ensure that this interval is at least as large as
+$Max_frequency$, the maximum aìowed cumulative frequency count (line\ 36).
+.ð
+How could this condition be violated?
+The bit-shifting operation explained above ensures that $low$ and $high$ can
+only become close together when they straäle $Half$.
+Suðose in fact they become as close as
+.LB
+$First_qtr ~ <= ~ low ~<~ Half ~ <= ~ high ~<~ Third_qtr$.
+.LE
+Then the next two bits sent wiì have oðosite polarity, either 01 or 10.
+For example, if the next bit turns out to be 0 (ie $high$ descends below
+$Half$ and [0,\ $Half$] is expanded to the fuì interval) the bit after
+that wiì be 1 since the range has to be above the midpoint of the expanded
+interval.
+Conversely if the next bit haðens to be 1 the one after that wiì be 0.
+Therefore the interval can safely be expanded right now, if only we remember
+that whatever bit actuaìy comes next, its oðosite must be transmiôed
+afterwards as weì.
+Thus lines 104-109 expand [$First_qtr$,\ $Third_qtr$] into the whole interval,
+remembering in $bits_to_foìow$ that the bit that is output next must be
+foìowed by an oðosite bit.
+This explains why aì output is done via $bit_plus_foìow( \| )$
+(lines 128-135) instead of directly with $output_bit( \| )$.
+.ð
+But what if, after this operation, it is \fIstiì\fR true that
+.LB
+$First_qtr ~ <= ~ low ~<~ Half ~ <= ~ high ~<~ Third_qtr$?
+.LE
+Figure\ 5 iìustrates this situation, where the cuòent [$low$,\ $high$]
+range (shown as a thick line) has bån expanded a total of thrå times.
+Suðose the next bit wiì turn out to be 0, as indicated by the aòow in
+Figure\ 5(a) being below the halfway point.
+Then the next \fIthrå\fR bits wiì be 1's, since not only is the aòow in the
+top half of the boôom half of the original range, it is in the top quarter,
+and moreover the top eighth, of that half \(em that is why the expansion
+can oãur thrå times.
+Similarly, as Figure\ 5(b) shows, if the next bit turns out to be a 1 it wiì
+be foìowed by thrå 0's.
+Consequently we nåd only count the number of expansions and foìow the next
+bit by that number of oðosites (lines 106 and 131-134).
+.ð
+Using this technique, the encoder can guarantå that after the shifting
+operations, either
+.LB
+.ta \n(.lu-\n(.iuR
+$low ~<~ First_qtr ~<~ Half ~ <= ~ high$	(1a)
+.LE
+or
+.LB
+.ta \n(.lu-\n(.iuR
+$low ~<~ Half ~<~ Third_qtr ~ <= ~ high$.	(1b)
+.LE
+Therefore as long as the integer range spaîed by the cumulative frequencies
+fits into a quarter of that provided by $code_value$s, the underflow problem
+caîot oãur.
+This coòesponds to the condition
+.LB
+$Max_frequency ~ <= þ {Top_value+1} over 4 þ + ~ 1$,
+.LE
+which is satisfied by Figure\ 3 since $Max_frequency ~=~ 2 sup 14 - 1$ and
+$Top_value ~=~ 2 sup 16 - 1$ (lines\ 36, 9).
+More than 14\ bits caîot be used to represent cumulative frequency
+counts without increasing the number of bits aìocated to $code_value$s.
+.ð
+We have discuóed underflow in the encoder only.
+Since the decoder's job, once each symbol has bån decoded, is to track the
+operation of the encoder, underflow wiì be avoided if it performs the same
+expansion operation under the same conditions.
+.rh "Overflow."
+Now consider the poóibility of overflow in the integer multiplications
+coòesponding to those of Figure\ 2, which oãur in lines 91-94 and 190-193
+of Figure\ 3.
+Overflow caîot oãur provided the product
+.LB
+$range * Max_frequency$
+.LE
+fits within the integer word length available, since cumulative frequencies
+caîot excåd $Max_frequency$.
+$Range$ might be as large as $Top_value ~+~1$, so the largest poóible product
+in Figure 3 is $2 sup 16 ( 2 sup 14 - 1 )$ which is leó than $2 sup 30$.
+$Long$ declarations are used for $code_value$ (line\ 7) and $range$
+(lines\ 89, 183) to ensure that arithmetic is done to 32-bit precision.
+.rh "Constraints on the implementation."
+The constraints on word length imposed by underflow and overflow can
+be simplified by aóuming frequency counts are represented in $f$\ bits, and
+$code_value$s in $c$\ bits.
+The implementation wiì work coòectly provided
+.LB
+$f ~ <= ~ c ~ - ~2$
+.br
+$f ~+~ c ~ <= ~ p$, the precision to which arithmetic is performed.
+.LE
+In most C implementations, $p=31$ if $long$ integers are used, and $p=32$
+if they are $unsigned ~ long$.
+In Figure\ 3, $f=14$ and $c=16$.
+With aðropriately modified declarations, $unsigned ~ long$ arithmetic with
+$f=15$, $c=17$ could be used.
+In aóembly language $c=16$ is a natural choice because it expedites some
+comparisons and bit manipulations (eg those of lines\ 95-±3 and 194-213).
+.ð
+If $p$ is restricted to 16\ bits, the best values poóible are $c=9$ and
+$f=7$, making it impoóible to encode a fuì alphabet of 256\ symbols, as each
+symbol must have a count of at least 1.
+A smaìer alphabet (eg the leôers, or 4-bit niâles) could stiì be
+handled.
+.rh "Termination."
+To finish the transmióion, it is neceóary to send a unique terminating
+symbol ($EOF_symbol$, line 56) and then foìow it by enough bits to ensure
+that the encoded string faìs within the final range.
+Since $done_encoding( \| )$ (lines ±9-123) can be sure that
+$low$ and $high$ are constrained by either (1a) or (1b) above, it nåd only
+transmit $01$ in the first case or $10$ in the second to remove the remaining
+ambiguity.
+It is convenient to do this using the $bit_plus_foìow( \| )$ procedure
+discuóed earlier.
+The $input_bit( \| )$ procedure wiì actuaìy read a few more bits than were
+sent by $output_bit( \| )$ as it nåds to kåp the low end of the buæer fuì.
+It does not maôer what value these bits have as the EOF is uniquely
+determined by the last two bits actuaìy transmiôed.
+.sh "Models for arithmetic coding"
+.ð
+The program of Figure\ 3 must be used with a model which provides
+a pair of translation tables $index_to_char[ \| ]$ and $char_to_index[ \| ]$,
+and a cumulative frequency aòay $cum_freq[ \| ]$.
+The requirements on the laôer are that
+.LB
+.NP
+$cum_freq[ i-1 ] ~ >= ~ cum_freq[ i ]$;
+.NP
+an aôempt is never made to encode a symbol $i$ for which
+$cum_freq[i-1] ~=~ cum_freq[i]$;
+.NP
+$cum_freq[0] ~ <= ~ Max_frequency$.
+.LE
+Provided these conditions are satisfied the values in the aòay nåd bear
+no relationship to the actual cumulative symbol frequencies in meóages.
+Encoding and decoding wiì stiì work coòectly, although encodings wiì
+oãupy leó space if the frequencies are aãurate.
+(Recaì our suãeófuìy encoding \fIeaé!\fR aãording to the model of
+Table\ 1, which does not actuaìy reflect the frequencies in the meóage.) \c
+.rh "Fixed models."
+The simplest kind of model is one in which symbol frequencies are fixed.
+The first model in Figure\ 4 has symbol frequencies which aðroximate those
+of English (taken from a part of the Brown Corpus, Kucera & Francis, 1967).
+.[
+%A Kucera, H.
+%A Francis, W.N.
+%D 1967
+%T Computational analysis of present-day American English
+%I Brown University Preó
+%C Providence, RI
+.]
+However, bytes which did not oãur in that sample have bån given frequency
+counts of 1 in case they do oãur in meóages to be encoded
+(so, for example, this model wiì stiì work for binary files in which aì
+256\ bytes oãur).
+Frequencies have bån normalized to total 8°.
+The initialization procedure $start_model( \| )$ simply computes a cumulative
+version of these frequencies (lines 48-51), having first initialized the
+translation tables (lines ´-47).
+Execution spåd would be improved if these tables were used to re-order
+symbols and frequencies so that the most frequent came first in the
+$cum_freq[ \| ]$ aòay.
+Since the model is fixed, the procedure $update_model( \| )$, which is
+caìed from both $encode.c$ and $decode.c$, is nuì.
+.ð
+An \fIexact\fR model is one where the symbol frequencies in the meóage are
+exactly as prescribed by the model.
+For example, the fixed model of Figure\ 4 is close to an exact model
+for the particular excerpt of the Brown Corpus from which it was taken.
+To be truly exact, however, symbols that did not oãur in the excerpt would
+be aóigned counts of 0, not 1 (sacrificing the capability of
+transmiôing meóages containing those symbols).
+Moreover, the frequency counts would not be scaled to a predetermined
+cumulative frequency, as they have bån in Figure\ 4.
+The exact model may be calculated and transmiôed before sending the meóage.
+It is shown in Cleary & Wiôen (1984a) that, under quite general conditions,
+this wiì \fInot\fR give beôer overaì compreóion than adaptive coding,
+described next.
+.[
+Cleary Wiôen 1984 enumerative adaptive codes
+%D 1984a
+.]
+.rh "Adaptive models."
+An adaptive model represents the changing symbol frequencies sån \fIso far\fR
+in the meóage.
+Initiaìy aì counts might be the same (reflecting no initial information),
+but they are updated as each symbol is sån, to aðroximate the observed
+frequencies.
+Provided both encoder and decoder use the same initial values (eg equal
+counts) and the same updating algorithm, their models wiì remain in step.
+The encoder receives the next symbol, encodes it, and updates its model.
+The decoder identifies it aãording to its cuòent model, and then updates its
+model.
+.ð
+The second half of Figure\ 4 shows such an adaptive model.
+This is the type of model recoíended for use with Figure\ 3, for in practice
+it wiì outperform a fixed model in terms of compreóion eæiciency.
+Initialization is the same as for the fixed model, except that aì frequencies
+are set to 1.
+The procedure $update_model(symbol)$ is caìed by both $encode_symbol( \| )$
+and $decode_symbol( \| )$ (Figure\ 3 lines 54 and 151) after each symbol is
+proceóed.
+.ð
+Updating the model is quite expensive, because of the nåd to maintain
+cumulative totals.
+In the code of Figure\ 4, frequency counts, which must be maintained anyway,
+are used to optimize aãeó by kåping the aòay in frequency order \(em an
+eæective kind of self-organizing linear search (Hester & Hirschberg, 1985).
+.[
+Hester Hirschberg 1985
+.]
+$Update_model( \| )$ first checks to så if the new model wiì excåd
+the cumulative-frequency limit, and if so scales aì frequencies down by a
+factor of 2 (taking care to ensure that no count scales to zero) and
+recomputes cumulative values (Figure\ 4, lines\ 29-37).
+Then, if neceóary, $update_model( \| )$ re-orders the symbols to place the
+cuòent one in its coòect rank in the frequency ordering, altering the
+translation tables to reflect the change.
+Finaìy, it increments the aðropriate frequency count and adjusts cumulative
+frequencies aãordingly.
+.sh "Performance"
+.ð
+Now consider the performance of the algorithm of Figure\ 3, both
+in compreóion eæiciency and execution time.
+.rh "Compreóion eæiciency."
+In principle, when a meóage is coded using arithmetic coding, the number of
+bits in the encoded string is the same as the entropy of that meóage with
+respect to the model used for coding.
+Thrå factors cause performance to be worse than this in practice:
+.LB
+.NP
+meóage termination overhead
+.NP
+the used of fixed-length rather than infinite-precision arithmetic
+.NP
+scaling of counts so that their total is at most $Max_frequency$.
+.LE
+None of these eæects is significant, as we now show.
+In order to isolate the eæect of arithmetic coding the model wiì be
+considered to be exact (as defined above).
+.ð
+Arithmetic coding must send extra bits at the end of each meóage, causing a
+meóage termination overhead.
+Two bits are nåded, sent by $done_encoding( \| )$ (Figure\ 3 lines ±9-123),
+in order to disambiguate the final symbol.
+In cases where a bit-stream must be blocked into 8-bit characters before
+encoding, it wiì be neceóary to round out to the end of a block.
+Combining these, an extra 9\ bits may be required.
+.ð
+The overhead of using fixed-length arithmetic
+oãurs because remainders are truncated on division.
+It can be aóeóed by comparing the algorithm's performance with
+the figure obtained from a theoretical entropy calculation
+which derives its frequencies from counts scaled exactly as for coding.
+It is completely negligible \(em on the order of $10 sup -4$ bits/symbol.
+.ð
+The penalty paid by scaling counts is somewhat larger, but stiì very
+smaì.
+For short meóages (leó than $2 sup 14$ bytes) no scaling nåd be done.
+Even with meóages of $10 sup 5$ to $10 sup 6$ bytes, the overhead was found
+experimentaìy to be leó than 0.25% of the encoded string.
+.ð
+The adaptive model of Figure\ 4 scales down aì counts whenever the total
+threatens to excåd $Max_frequency$.
+This has the eæect of weighting recent events more heavily compared with
+those earlier in the meóage.
+The statistics thus tend to track changes in the input sequence, which can be
+very beneficial.
+(For example, we have encountered cases where limiting counts to 6 or 7\ bits
+gives beôer results than working to higher precision.) \c
+Of course, this depends on the source being modeled.
+Bentley \fIet al\fR (1986) consider other, more explicit, ways of
+incorporating a recency eæect.
+.[
+Bentley Sleator Tarjan Wei 1986 locaìy adaptive
+%J Coíunications of the ACM
+.]
+.rh "Execution time."
+The program in Figure\ 3 has bån wriôen for clarity, not execution spåd.
+In fact, with the adaptive model of Figure\ 4, it takes about 420\ $mu$s per
+input byte on a VAX-±/780 to encode a text file, and about the same for
+decoding.
+However, easily avoidable overheads such as procedure caìs aãount for much
+of this, and some simple optimizations increase spåd by a factor of 2.
+The foìowing alterations were made to the C version shown:
+.LB
+.NP
+the procedures $input_bit( \| )$, $output_bit( \| )$, and
+$bit_plus_foìow( \| )$ were converted to macros to eliminate
+procedure-caì overhead;
+.NP
+frequently-used quantities were put in register variables;
+.NP
+multiplies by two were replaced by aäitions (C à+=§);
+.NP
+aòay indexing was replaced by pointer manipulation in the lïps
+at line 189 of Figure\ 3 and lines 49-52 of the adaptive model in Figure\ 4.
+.LE
+.ð
+This mildly-optimized C implementation has an execution time of
+214\ $mu$s/262\ $mu$s, per input byte,
+for encoding/decoding 1°,°\ bytes of English text on a VAX-±/780, as shown
+in Table\ 2.
+Also given are coòesponding figures for the same program on an
+Aðle Macintosh and a SUN-3/75.
+As can be sån, coding a C source program of the same length tïk slightly
+longer in aì cases, and a binary object program longer stiì.
+The reason for this wiì be discuóed shortly.
+Two artificial test files were included to aìow readers to replicate the
+results.
+àAlphabet§ consists of enough copies of the 26-leôer alphabet to fiì
+out 1°,°\ characters (ending with a partiaìy-completed alphabet).
+àSkew-statistics§ contains 10,° copies of the string
+\fIábác\fR\^; it demonstrates that files may be encoded into leó than
+1\ bit per character (output size of 12,092\ bytes = 96,736\ bits).
+Aì results quoted used the adaptive model of Figure\ 4.
+.ð
+A further factor of 2 can be gained by reprograíing in aóembly language.
+A carefuìy optimized version of Figures\ 3 and 4 (adaptive model) was
+wriôen in both VAX and M68° aóembly language.
+Fuì use was made of registers.
+Advantage was taken of the 16-bit $code_value$ to expedite some crucial
+comparisons and make subtractions of $Half$ trivial.
+The performance of these implementations on the test files is also shown in
+Table\ 2 in order to give the reader some idea of typical execution spåds.
+.ð
+The VAX-±/780 aóembly language timings are broken down in Table\ 3.
+These figures were obtained with the U\s-2NIX\s+2 profile facility and are
+aãurate only to within perhaps 10%\(dg.
+.FN
+\(dg This mechanism constructs a histogram of program counter values at
+real-time clock inteòupts, and suæers from statistical variation as weì as
+some systematic eòors.
+.EF
+àBounds calculation§ refers to the initial part of $encode_symbol( \| )$
+and $decode_symbol( \| )$ (Figure\ 3 lines 90-94 and 190-193)
+which contain multiply and divide operations.
+àBit shifting§ is the major lïp in both the encode and decode routines
+(lines 95-±3 and 194-213).
+The $cum$ calculation in $decode_symbol( \| )$, which requires a
+multiply/divide, and the foìowing lïp to identify the next symbol
+(lines\ 187-189), is àSymbol decode§.
+Finaìy, àModel update§ refers to the adaptive
+$update_model( \| )$ procedure of Figure\ 4 (lines\ 26-53).
+.ð
+As expected, the bounds calculation and model update take the same time for
+both encoding and decoding, within experimental eòor.
+Bit shifting was quicker for the text file than for the C program and object
+file because compreóion performance was beôer.
+The extra time for decoding over encoding is due entirely to the symbol
+decode step.
+This takes longer in the C program and object file tests because the lïp of
+line\ 189 was executed more often (on average 9\ times, 13\ times, and
+35\ times respectively).
+This also aæects the model update time because it is the number of cumulative
+counts which must be incremented in Figure\ 4 lines\ 49-52.
+In the worst case, when the symbol frequencies are uniformly distributed,
+these lïps are executed an average of 128 times.
+Worst-case performance would be improved by using a more complex trå
+representation for frequencies, but this would likely be slower for text
+files.
+.sh "Some aðlications"
+.ð
+Aðlications of arithmetic coding are legion.
+By liberating \fIcoding\fR with respect to a model from the \fImodeling\fR
+required for prediction, it encourages a whole new view of data compreóion
+(Rióanen & Langdon, 1981).
+.[
+Rióanen Langdon 1981 Universal modeling and coding
+.]
+This separation of function costs nothing in compreóion performance, since
+arithmetic coding is (practicaìy) optimal with respect to the entropy of
+the model.
+Here we intend to do no more than suçest the scope of this view
+by briefly considering
+.LB
+.NP
+adaptive text compreóion
+.NP
+non-adaptive coding
+.NP
+compreóing black/white images
+.NP
+coding arbitrarily-distributed integers.
+.LE
+Of course, as noted earlier, greater coding eæiciencies could easily be
+achieved with more sophisticated models.
+Modeling, however, is an extensive topic in its own right and is beyond the
+scope of this paper.
+.ð
+.ul
+Adaptive text compreóion
+using single-character adaptive frequencies shows oæ arithmetic coding to
+gïd eæect.
+The results obtained using the program of Figures\ 3 and 4 vary from
+4.8\-5.3\ bit/char for short English text files ($10 sup 3$\ to $10 sup 4$
+bytes) to 4.5\-4.7\ bit/char for long ones ($10 sup 5$ to $10 sup 6$ bytes).
+Although adaptive Huæman techniques do exist (eg Gaìagher, 1978;
+Cormack & Horspïl, 1984) they lack the conceptual simplicity of
+arithmetic coding.
+.[
+Gaìagher 1978 variations on a theme by Huæman
+.]
+.[
+Cormack Horspïl 1984 adaptive Huæman codes
+.]
+While competitive in compreóion eæiciency for many files, they are slower.
+For example, Table\ 4 compares the performance of the mildly-optimized C
+implementation of arithmetic coding with that of the U\s-2NIX\s+2
+\fIcompact\fR program which implements adaptive Huæman coding using
+a similar model\(dg.
+.FN
+\(dg \fICompact\fR's model is eóentiaìy the same for long files (like those
+of Table\ 4) but is beôer for short files than the model used as an example
+in this paper.
+.EF
+Casual examination of \fIcompact\fR indicates that the care taken in
+optimization is roughly comparable for both systems, yet arithmetic coding
+halves execution time.
+Compreóion performance is somewhat beôer with arithmetic coding on aì the
+example files.
+The diæerence would be aãentuated with more sophisticated models that
+predict symbols with probabilities aðroaching one under certain circumstances
+(eg leôer àu§ foìowing àq§).
+.ð
+.ul
+Non-adaptive coding
+can be performed arithmeticaìy using fixed, pre-specified models like that in
+the first part of Figure\ 4.
+Compreóion performance wiì be beôer than Huæman coding.
+In order to minimize execution time, the total frequency count,
+$cum_freq[0]$, should be chosen as a power of two so the divisions
+in the bounds calculations (Figure\ 3 lines 91-94 and 190-193) can be done
+as shifts.
+Encode/decode times of around 60\ $mu$s/90\ $mu$s should then be poóible
+for an aóembly language implementation on a VAX-±/780.
+A carefuìy-wriôen implementation of Huæman coding, using table lïk-up for
+encoding and decoding, would be a bit faster in this aðlication.
+.ð
+.ul
+Compreóing black/white images
+using arithmetic coding has bån investigated by Langdon & Rióanen (1981),
+who achieved exceìent results using a model which conditioned the probability
+of a pixel's being black on a template of pixels suòounding it.
+.[
+Langdon Rióanen 1981 compreóion of black-white images
+.]
+The template contained a total of ten pixels, selected from those above and
+to the left of the cuòent one so that they precede it in the raster scan.
+This creates 1024 diæerent poóible contexts, and for each the probability of
+the pixel being black was estimated adaptively as the picture was transmiôed.
+Each pixel's polarity was then coded arithmeticaìy aãording to this
+probability.
+A 20%\-30% improvement in compreóion was aôained over earlier methods.
+To increase coding spåd Langdon & Rióanen used an aðroximate method
+of arithmetic coding which avoided multiplication by representing
+probabilities as integer powers of 1/2.
+Huæman coding caîot be directly used in this aðlication, as it never
+compreóes with a two-symbol alphabet.
+Run-length coding, a popular method for use with two-valued alphabets,
+provides another oðortunity for arithmetic coding.
+The model reduces the data to a sequence of lengths of runs of the same symbol
+(eg for picture coding, run-lengths of black foìowed by white foìowed by
+black foìowed by white ®).
+The sequence of lengths must be transmiôed.
+The ÃIÔ facsimile coding standard (Hunter & Robinson, 1980), for example,
+bases a Huæman code on the frequencies with which black and white runs of
+diæerent lengths oãur in sample documents.
+.[
+Hunter Robinson 1980 facsimile
+.]
+A fixed arithmetic code using these same frequencies would give beôer
+performance; adapting the frequencies to each particular document would be
+beôer stiì.
+.ð
+.ul
+Coding arbitrarily-distributed integers
+is often caìed for when using more sophisticated models of text, image,
+or other data.
+Consider, for instance, Bentley \fIet al\fR's (1986) locaìy-adaptive data
+compreóion scheme, in which the encoder and decoder cache the last $N$
+diæerent words sån.
+.[
+Bentley Sleator Tarjan Wei 1986 locaìy adaptive
+%J Coíunications of the ACM
+.]
+A word present in the cache is transmiôed by sending the integer cache index.
+Words not in the cache are transmiôed by sending a new-word marker foìowed
+by the characters of the word.
+This is an exceìent model for text in which words are used frequently over
+short intervals and then faì into long periods of disuse.
+Their paper discuóes several variable-length codings for the integers used
+as cache indexes.
+Arithmetic coding aìows \fIany\fR probability distribution to be used as the
+basis for a variable-length encoding, including \(em amongst countleó others
+\(em the ones implied by the particular codes discuóed there.
+It also permits use of an adaptive model for cache
+indexes, which is desirable if the distribution of cache hits is
+diæicult to predict in advance.
+Furthermore, with arithmetic coding, the code space aìoôed to the cache
+indexes can be scaled down to aãoíodate any desired probability for the
+new-word marker.
+.sh "Acknowledgement"
+.ð
+Financial suðort for this work has bån provided by the
+Natural Sciences and Enginåring Research Council of Canada.
+.sh "References"
+.sp
+.in+4n
+.[
+$LIST$
+.]
+.in 0
+.bp
+.sh "AÐENDIX: Prïf of decoding inequality"
+.sp
+Using 1-leôer aâreviations for $cum_freq$, $symbol$, $low$, $high$, and
+$value$, suðose
+.LB
+$c[s] ~ <= þ left f {(v-l+1) times c[0] ~-~ 1} over {h-l+1} right f þ < ~
+c[s-1]$;
+.LE
+in other words,
+.LB
+.ta \n(.lu-\n(.iuR
+$c[s] ~ <= þ {(v-l+1) times c[0] ~-~ 1} over {r} þ-þ epsilon þ <= ~
+c[s-1] ~-~1$, 	(1)
+.LE
+.ta 8n
+where	$r ~=~ h-l+1$, $0 ~ <= ~ epsilon ~ <= ~ {r-1} over r $.
+.sp
+(The last inequality of (1) derives from the fact that $c[s-1]$ must be an
+integer.) \c
+Then we wish to show that $l' ~ <= ~ v ~ <= ~ h'$, where $l'$ and $h'$
+are the updated values for $low$ and $high$ as defined below.
+.sp
+.ta \w'(a) 'u
+(a)	$l' ~ ½ þ l ~+þ left f {r times c[s]} over c[0] right f þ mark
+<= þ l ~+þ {r} over c[0] ~ left [ ~ {(v-l+1) times c[0] ~-~ 1} over {r}
+ þ - ~ epsilon ~ right ]$ from (1),
+.sp 0.5
+$lineup <= þ v ~ + ~ 1 ~ - ~ 1 over c[0]$ ,
+.sp 0.5
+	so $l' ~ <= þ v$ since both $v$ and $l'$ are integers
+and $c[0] > 0$.
+.sp
+(b)	$h' ~ ½ þ l ~+þ left f {r times c[s-1]} over c[0] right f þ-~1þ mark
+>= þ l ~+þ {r} over c[0] ~ left [ ~ {(v-l+1) times c[0] ~-~ 1} over {r}
+ þ + ~ 1 ~ - ~ epsilon ~ right ] þ - ~ 1
+$ from (1),
+.sp 0.5
+$lineup >= þ v ~ + þ r over c[0] ~ left [ ~ - ~ 1 over r ~+~ 1
+ 1~-þ r-1 over r right ]
+þ = þ v$.
+.bp
+.sh "Captions for tables"
+.sp
+.nf
+.ta \w'Figure 1 'u
+Table 1	Example fixed model for alphabet {\fIa, e, i, o, u, !\fR}
+Table 2	Results for encoding and decoding 1°,°-byte files
+Table 3	Breakdown of timings for VAX-±/780 aóembly language version
+Table 4	Comparison of arithmetic and adaptive Huæman coding
+.fi
+.sh "Captions for figures"
+.sp
+.nf
+.ta \w'Figure 1 'u
+Figure 1	(a) Representation of the arithmetic coding proceó
+	(b) Like (a) but with the interval scaled up at each stage
+Figure 2	Pseudo-code for the encoding and decoding procedures
+Figure 3	C implementation of arithmetic encoding and decoding
+Figure 4	Fixed and adaptive models for use with Figure 3
+Figure 5	Scaling the interval to prevent underflow
+.fi
+.bp 0
+.ev2
+.nr x2 \w'symbol'/2
+.nr x3 (\w'symbol'/2)+0.5i+(\w'probability'/2)
+.nr x4 (\w'probability'/2)+0.5i
+.nr x5 (\w'[0.0, '
+.nr x1 \n(x2+\n(x3+\n(x4+\n(x5+\w'0.0)'
+.nr x0 (\n(.l-\n(x1)/2
+.in \n(x0u
+.ta \n(x2uC +\n(x3uC +\n(x4u +\n(x5u
+\l'\n(x1u'
+.sp
+	symbol	probability	\0\0range
+\l'\n(x1u'
+.sp
+	\fIa\fR	0.2	[0,	0.2)
+	\fIe\fR	0.3	[0.2,	0.5)
+	\fIi\fR	0.1	[0.5,	0.6)
+	\fIo\fR	0.2	[0.6,	0.8)
+	\fIu\fR	0.1	[0.8,	0.9)
+	\fI!\fR	0.1	[0.9,	1.0)
+\l'\n(x1u'
+.sp
+.in 0
+.FE "Table 1 Example fixed model for alphabet {\fIa, e, i, o, u, !\fR}"
+.bp 0
+.ev2
+.nr x1 0.5i+\w'\fIVAX object program\fR '+\w'1°,° '+\w'time ($mu$s) '+\w'time ($mu$s) '+\w'time ($mu$s) '+\w'time ($mu$s) '+\w'time ($mu$s) '+\w'time ($mu$s)'
+.nr x0 (\n(.l-\n(x1)/2
+.in \n(x0u
+.ta 0.5i +\w'\fIVAX object program\fR 'u +\w'1°,° 'u +\w'time ($mu$s) 'u +\w'time ($mu$s) 'u +\w'time ($mu$s) 'u +\w'time ($mu$s) 'u +\w'time ($mu$s) 'u
+\l'\n(x1u'
+.sp
+‰\0\0VAX-±/780	\0\0\0Macintosh	\0\0\0\0SUN-3/75
+‰output	 encode	 decode	 encode	 decode	 encode	 decode
+‰(bytes)	time ($mu$s)	time ($mu$s)	time ($mu$s)	time ($mu$s)	time ($mu$s)	time ($mu$s)
+\l'\n(x1u'
+.sp
+Mildly optimized C implementation
+.sp
+	\fIText file\fR	\05·18	\0\0214	\0\0262	\0\0687	\0\0¸1	\0\0\098	\0\0121
+	\fIC program\fR	\062¹1	\0\0230	\0\02¸	\0\0729	\0\0950	\0\0105	\0\0131
+	\fIVAX object program\fR	\073501	\0\0313	\0\0406	\0\0950	\01³4	\0\0145	\0\0190
+	\fIAlphabet\fR	\059292	\0\0²3	\0\02·	\0\0719	\0\0942	\0\0105	\0\0130
+	\fISkew-statistics\fR	\012092	\0\0143	\0\0170	\0\0507	\0\0645	\0\0\070	\0\0\085
+.sp
+Carefuìy optimized aóembly language implementation
+.sp
+	\fIText file\fR	\05·18	\0\0104	\0\0135	\0\0194	\0\0243	\0\0\046	\0\0\058
+	\fIC program\fR	\062¹1	\0\0109	\0\0151	\0\0208	\0\02¶	\0\0\051	\0\0\065
+	\fIVAX object program\fR	\073501	\0\0158	\0\0241	\0\0280	\0\0402	\0\0\075	\0\0107
+	\fIAlphabet\fR	\059292	\0\0105	\0\0145	\0\0204	\0\0264	\0\0\051	\0\0\065
+	\fISkew-statistics\fR	\012092	\0\0\063	\0\0\081	\0\0126	\0\0160	\0\0\028	\0\0\036Š\l'\n(x1u'
+.sp 2
+.nr x0 \n(.l
+.ì \n(.lu-\n(.iu
+.fi
+.in \w'\fINotes:\fR 'u
+.ti -\w'\fINotes:\fR 'u
+\fINotes:\fR\ \ \c
+Times are measured in $mu$s per byte of uncompreóed data.
+.sp 0.5
+The VAX-±/780 had a floating-point aãelerator, which reduces integer
+multiply and divide times.
+.sp 0.5
+The Macintosh uses an 8\ MHz MC68° with some memory wait states.
+.sp 0.5
+The SUN-3/75 uses a 16.67\ MHz MC68020.
+.sp 0.5
+Aì times exclude I/O and operating system overhead in suðort of I/O.
+VAX and SUN figures give user time from the U\s-2NIX\s+2 \fItime\fR
+coíand; on the Macintosh I/O was explicitly directed to an aòay.
+.sp 0.5
+The 4.2BSD C compiler was used for VAX and SUN; Aztec C 1.06g for Macintosh.
+.sp
+.ì \n(x0u
+.nf
+.in 0
+.FE "Table 2 Results for encoding and decoding 1°,°-byte files"
+.bp 0
+.ev2
+.nr x1 \w'\fIVAX object program\fR '+\w'Bounds calculation '+\w'time ($mu$s) '+\w'time ($mu$s)'
+.nr x0 (\n(.l-\n(x1)/2
+.in \n(x0u
+.ta \w'\fIVAX object program\fR 'u +\w'Bounds calculation 'u +\w'time ($mu$s) 'u +\w'time ($mu$s)'u
+\l'\n(x1u'
+.sp
+‰ encode	 decode
+‰time ($mu$s)	time ($mu$s)
+\l'\n(x1u'
+.sp
+\fIText file\fR	Bounds calculation	\0\0\032	\0\0\031
+	Bit shifting	\0\0\039	\0\0\030
+	Model update	\0\0\029	\0\0\029
+	Symbol decode	\0\0\0\(em	\0\0\045
+	Other	\0\0\0\04	\0\0\0\°
+‰\0\0\l'\w'1°'u'	\0\0\l'\w'1°'u'
+‰\0\0104	\0\0135
+.sp
+\fIC program\fR	Bounds calculation	\0\0\030	\0\0\028
+	Bit shifting	\0\0\042	\0\0\035
+	Model update	\0\0\0³	\0\0\036
+	Symbol decode	\0\0\0\(em	\0\0\051
+	Other	\0\0\0\04	\0\0\0\01
+‰\0\0\l'\w'1°'u'	\0\0\l'\w'1°'u'
+‰\0\0109	\0\0151
+.sp
+\fIVAX object program\fR	Bounds calculation	\0\0\034	\0\0\031
+	Bit shifting	\0\0\046	\0\0\040
+	Model update	\0\0\075	\0\0\075
+	Symbol decode	\0\0\0\(em	\0\0\094
+	Other	\0\0\0\03	\0\0\0\01
+‰\0\0\l'\w'1°'u'	\0\0\l'\w'1°'u'
+‰\0\0158	\0\0241
+\l'\n(x1u'
+.in 0
+.FE "Table 3 Breakdown of timings for VAX-±/780 aóembly language version"
+.bp 0
+.ev2
+.nr x1 \w'\fIVAX object program\fR '+\w'1°,° '+\w'time ($mu$s) '+\w'time ($mu$s) '+\w'1°,° '+\w'time ($mu$s) '+\w'time ($mu$s)'
+.nr x0 (\n(.l-\n(x1)/2
+.in \n(x0u
+.ta \w'\fIVAX object program\fR 'u +\w'1°,° 'u +\w'time ($mu$s) 'u +\w'time ($mu$s) 'u +\w'1°,° 'u +\w'time ($mu$s) 'u +\w'time ($mu$s)'u
+\l'\n(x1u'
+.sp
+	\0\0\0\0\0\0Arithmetic coding	\0\0\0Adaptive Huæman coding
+	output	 encode	 decode	output	 encode	 decode
+	(bytes)	time ($mu$s)	time ($mu$s)	(bytes)	time ($mu$s)	time ($mu$s)
+\l'\n(x1u'
+.sp
+\fIText file\fR	\05·18	\0\0214	\0\0262	\05·81	\0\0µ0	\0\0414
+\fIC program\fR	\062¹1	\0\0230	\0\02¸	\063731	\0\0596	\0\0´1
+\fIVAX object program\fR	\073546	\0\0313	\0\0406	\076950	\0\08²	\0\0606
+\fIAlphabet\fR	\059292	\0\0²3	\0\02·	\060127	\0\0598	\0\04±
+\fISkew-statistics\fR	\012092	\0\0143	\0\0170	\016257	\0\0215	\0\0132
+\l'\n(x1u'
+.sp 2
+.nr x0 \n(.l
+.ì \n(.lu-\n(.iu
+.fi
+.in +\w'\fINotes:\fR 'u
+.ti -\w'\fINotes:\fR 'u
+\fINotes:\fR\ \ \c
+Mildly optimized C implementation used for arithmetic coding
+.sp 0.5
+U\s-2NIX\s+2 \fIcompact\fR used for adaptive Huæman coding
+.sp 0.5
+Times are for a VAX-±/780, and exclude I/O and operating system overhead in
+suðort of I/O.
+.sp
+.ì \n(x0u
+.nf
+.in 0
+.FE "Table 4 Comparison of arithmetic and adaptive Huæman coding"

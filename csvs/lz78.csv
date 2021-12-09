@@ -1,9 +1,9 @@
 Dataset,Dataset_Path,Original_Size,Compressed_Size,Compression_Ratio
 book1,./Datasets/Calgary_Corpus/book1,768771,334410,0.5650070046867013
-book2,./Datasets/Calgary_Corpus/book2,610856,81920,0.8658931073771887
+book2,./Datasets/Calgary_Corpus/book2,610856,252274,0.5870155977840932
 news,./Datasets/Calgary_Corpus/news,377109,184418,0.5109689771392356
 paper1,./Datasets/Calgary_Corpus/paper1,53161,25084,0.5281503357724648
-paper2,./Datasets/Calgary_Corpus/paper2,82199,32768,0.6013576807503741
+paper2,./Datasets/Calgary_Corpus/paper2,82199,36168,0.5599946471368265
 paper3,./Datasets/Calgary_Corpus/paper3,46526,22170,0.5234922408975626
 paper4,./Datasets/Calgary_Corpus/paper4,13286,6963,0.47591449646244166
 paper5,./Datasets/Calgary_Corpus/paper5,11954,6586,0.4490547097205956
@@ -23,5 +23,4 @@ E.coli,./Datasets/Large_text_files/E.coli,4638690,1257395,0.7289331686316611
 world192.txt,./Datasets/Large_text_files/world192.txt,2473400,1007254,0.5927654241125576
 hi,./Datasets/protein_corpus/hi,509519,304976,0.4014433220350958
 hs,./Datasets/protein_corpus/hs,3295751,1947072,0.40921750459910355
-mj,./Datasets/protein_corpus/mj,448779,262053,0.4160756185115614
 sc,./Datasets/protein_corpus/sc,2900352,1735124,0.40175399399796985
