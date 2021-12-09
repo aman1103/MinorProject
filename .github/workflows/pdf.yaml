@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
+      - name: Install numpy and pandas
+        run: pip install numpy pandas
       - name: Generate CSV
         run: sudo make csv
       - name: Generate Figures
