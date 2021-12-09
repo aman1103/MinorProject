@@ -14,8 +14,13 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - name: Install numpy and pandas
-        run: pip3 install numpy pandas
+      # - name: Install numpy and pandas
+      #   run: pip3 install numpy pandas
+      - uses: BSFishy/pip-action@v1
+        with:
+          packages: |
+            numpy
+            pandas
       - name: Generate CSV
         run: sudo python generate_csv.py
       - name: Generate Figures
