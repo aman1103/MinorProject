@@ -17,9 +17,9 @@ jobs:
       - name: Install numpy and pandas
         run: pip3 install numpy pandas
       - name: Generate CSV
-        run: sudo make csv
+        run: sudo python generate_csv.py
       - name: Generate Figures
-        run: sudo make report
+        run: sudo python csv_to_graph.py
       - uses: baileyjm02/markdown-to-pdf@v1
         with:
           input_dir: .
